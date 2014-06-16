@@ -28,6 +28,7 @@ class GnomeConfig:
     current_rep = os.path.dirname(os.path.abspath(__file__))
     EDITOR_UI_FILE = os.path.join(current_rep, "taskeditor.ui")
     CALENDAR_UI_FILE = os.path.join(current_rep, "calendar.ui")
+    NOTIFY_UI_FILE = os.path.join(current_rep, "notifydialog.ui")
 
     MARK_DONE = _("Mark as Done")
     MARK_UNDONE = _("Mark as not Done")
@@ -41,6 +42,7 @@ class GnomeConfig:
     DELETE_TOOLTIP = _("Permanently remove this task")
     SUBTASK_TOOLTIP = _("Insert a subtask in this task")
     TAG_TOOLTIP = _("Insert a tag in this task")
+    REPEAT_TASK_TOOLTIP = _("Repeat this task")
 
     # Number of second between to save in the task editor
     SAVETIME = 7

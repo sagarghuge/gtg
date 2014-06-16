@@ -26,6 +26,7 @@ from GTG.core import CoreConfig
 from GTG.core.task import Task
 from GTG.core.search import parse_search_query, search_filter
 from GTG.gtk.browser.CellRendererTags import CellRendererTags
+from GTG.gtk.browser.CellRendererIcons import CellRendererIcons
 from liblarch_gtk import TreeView
 from GTG.gtk import colors
 from GTG.tools.dates import Date
@@ -368,6 +369,18 @@ class TreeviewFactory():
     # to both active and closed tasks treeview
     def common_desc_for_tasks(self, tree, title_label):
         desc = {}
+
+        col_name = 'recurringtask'
+        col = {}
+        render_tags = CellRendererIcons()
+        col['renderer'] = ['icon', render_tags]
+        col['value'] = [GObject.TYPE_PYOBJECT,
+                        lambda node: node.get_recurrence_task()]
+        col['visible'] = True
+        col['expandable'] = False
+        col['resizable'] = False
+        col['order'] = 0
+        desc[col_name] = col
 
         # invisible 'task_id' column
         col_name = 'task_id'

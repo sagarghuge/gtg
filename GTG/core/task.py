@@ -20,7 +20,9 @@
 """
 task.py contains the Task class which represents (guess what) a task
 """
-from datetime import datetime
+from datetime import datetime, timedelta
+from dateutil import rrule
+import calendar
 import cgi
 import re
 import uuid
@@ -58,7 +60,19 @@ class Task(TreeNode):
         self.closed_date = Date.no_date()
         self.due_date = Date.no_date()
         self.start_date = Date.no_date()
+        self.endon_date = Date.no_date()
         self.can_be_deleted = newtask
+        self.recurringtask = None
+        self.repeats = None
+        self.frequency = None
+        self.days = None
+        self.endson = None
+        self.occurrences = None
+        self.onthe = None
+        self.onday = None
+        self.rid = None
+        self.parent = None
+        self.is_subtask = False
         # tags
         self.tags = []
         self.req = requester
@@ -87,6 +101,79 @@ class Task(TreeNode):
 
     def get_id(self):
         return str(self.tid)
+
+    def set_rid(self, rid):
+        self.rid = rid
+
+    def get_rid(self):
+        return str(self.rid)
+
+    def get_recurrence_attribute(self):
+        #TODO Will get the attribute recurrence
+        if self.recurringtask is not None:
+            return str(self.recurringtask)
+
+    def get_recurrence_onthe(self):
+        if self.onthe is not None:
+            return str(self.onthe)
+
+    def set_recurrence_onthe(self, onthe):
+        self.onthe = onthe
+
+    def set_recurrence_onday(self, onday):
+        self.onday = onday
+
+    def get_recurrence_onday(self):
+        if self.onday is not None:
+            return str(self.onday)
+
+    def get_recurrence_task(self):
+        #TODO This will return the instances of task
+        if self.recurringtask is not None and self.recurringtask == 'True':
+            return self
+
+    def get_recurrence_endson(self):
+        if self.endson is not None:
+            if self.endson == "occurrence" or self.endson == "occurrences":
+                return str(self.occurrences)
+            elif self.endson == "date":
+                return self.endon_date
+            else:
+                return str(self.endson)
+
+    def set_recurrence_endson(self, attr, endson):
+        if attr == "date":
+            self.endson = "date"
+            self.set_endon_date(Date(endson))
+        elif attr == "occurrence" or attr == "occurrences":
+            self.endson = attr
+            self.occurrences = endson
+        else:
+            self.endson = attr
+
+    def get_recurrence_repeats(self):
+        if self.repeats is not None:
+            return str(self.repeats)
+
+    def set_recurrence_repeats(self, repeats):
+        self.repeats = repeats
+
+    def get_recurrence_frequency(self):
+        if self.frequency is not None:
+            return str(self.frequency)
+
+    def set_recurrence_frequency(self, frequency):
+        self.frequency = frequency
+
+    def get_recurrence_days(self):
+        if self.days is not None:
+            return str(self.days)
+
+    def set_recurrence_days(self, days):
+        self.days = days
+
+    def set_recurrence_attribute(self, attribute):
+        self.recurringtask = attribute
 
     def set_uuid(self, value):
         self.uuid = str(value)
@@ -191,6 +278,179 @@ class Task(TreeNode):
             self.set_due_date(due_date)
             self.set_start_date(defer_date)
 
+    def get_current_date(self):
+        now = datetime.now()
+        return Date.parse(now.strftime("%Y-%m-%d"))
+
+    def validate_task(self, status=None):
+        current_date = self.get_current_date()
+        if self.endson == "never":  # Never
+            # Don't set DONE status
+            if self.due_date.__le__(current_date):
+                self.activate_create_instance()
+            elif status == self.STA_DONE:
+                self.activate_create_instance()
+        elif self.endson == "date":  # On
+            # Send DONE status on the given date
+            if self.get_endon_date().__eq__(current_date):
+                self.set_status(self.STA_DONE)
+            elif self.due_date.__lt__(current_date):
+                self.activate_create_instance()
+            elif self.due_date.__lt__(self.endon_date):
+                self.activate_create_instance()
+        elif self.endson == "occurrence" or self.endson == "occurrences":
+            # Send DONE status after the given occurrence
+            # get count of task having same rid
+            done_occurrences = self.req.get_rid_count(self.tid)
+            if len(done_occurrences) < int(self.occurrences):
+                self.activate_create_instance()
+            else:
+                self.set_status(self.STA_DONE)
+
+    def add_months(self, sourcedate, months):
+        month = sourcedate.month - 1 + months
+        year = int(sourcedate.year + month / 12)
+        month = month % 12 + 1
+        day = min(sourcedate.day, calendar.monthrange(year, month)[1])
+        return Date.parse(str(year)+str(month)+str(day))
+
+    def create_weekdayrule_tuple(self):
+        days = ["Monday", "Tuesday", "Wednesday",
+                "Thursday", "Friday", "Saturday", "Sunday"]
+        mylist = []
+        if self.days.__contains__(','):
+            tmp_lst = self.days.split(',')
+            for item in tmp_lst:
+                mylist.append(days.index(item.strip()))
+        else:
+            mylist.append(days.index(self.days))
+        return tuple(mylist)
+
+    def get_onthe_index(self):
+        ontheL = ["First", "Second", "Third", "Fourth", "Fifth", "Last"]
+        if self.onthe == "Last":
+            return -1
+        else:
+            return ontheL.index(self.onthe)+1
+
+    def get_monthly_due_date(self, interval):
+        onthe = self.get_onthe_index()
+        ondayD = {"Monday": rrule.MO, "Tuesday": rrule.TU,
+                  "Wednesday": rrule.WE, "Thursday": rrule.TH,
+                  "Friday": rrule.FR, "Saturday": rrule.SA,
+                  "Sunday": rrule.SU}
+        new_date = list(rrule.rrule(
+            rrule.MONTHLY, interval=interval,
+            count=1, byweekday=ondayD[self.onday](onthe), dtstart=datetime(
+                self.due_date.year, self.due_date.month, self.due_date.day
+                )))[0]
+        date = Date.parse(
+            str(new_date.year)+str(new_date.month)+str(new_date.day))
+        if date.__eq__(self.due_date):
+            return list(rrule.rrule(
+                rrule.MONTHLY, interval=interval,
+                count=1, byweekday=ondayD[self.onday](onthe),
+                dtstart=datetime(
+                    self.due_date.year, self.due_date.month,
+                    self.due_date.day+1)))[0]
+        else:
+            return new_date
+
+    def calculate_new_due_date(self):
+        if self.repeats == "Daily":
+            if int(self.frequency) == 0:
+                return self.get_due_date() + \
+                    timedelta(days=1)
+            else:
+                return self.get_due_date() + \
+                    timedelta(days=int(self.frequency))
+        elif self.repeats == "Weekly":
+            current_date = self.get_current_date()
+            rule_tupple = self.create_weekdayrule_tuple()
+            if int(self.frequency) == 0 or int(self.frequency) == 1:
+                new_date = list(rrule.rrule(
+                    rrule.WEEKLY, count=1,
+                    wkst=current_date.weekday(),
+                    byweekday=rule_tupple,
+                    dtstart=datetime(
+                        self.due_date.year, self.due_date.month,
+                        self.due_date.day+1)))[0]
+                return Date.parse(
+                    str(new_date.year)+str(new_date.month)+str(new_date.day))
+            else:
+                new_date = list(rrule.rrule(
+                    rrule.WEEKLY, interval=int(self.frequency), count=1,
+                    wkst=current_date.weekday(),
+                    byweekday=rule_tupple,
+                    dtstart=datetime(
+                        self.due_date.year, self.due_date.month,
+                        self.due_date.day+1)))[0]
+                return Date.parse(
+                    str(new_date.year)+str(new_date.month)+str(new_date.day))
+        elif self.repeats == "Monthly":
+            if int(self.frequency) == 0 or int(self.frequency) == 1:
+                new_date = self.get_monthly_due_date(1)
+                return Date.parse(
+                    str(new_date.year)+str(new_date.month)+str(new_date.day))
+            else:
+                new_date = self.get_monthly_due_date(int(self.frequency))
+                return Date.parse(
+                    str(new_date.year)+str(new_date.month)+str(new_date.day))
+        elif self.repeats == "Yearly":
+            if int(self.frequency) == 0:
+                return self.add_months(self.due_date(), 12)
+            else:
+                return self.add_months(
+                    self.get_due_date(), 12 * int(self.frequency))
+
+    #TODO refactor this method and create copy and create task new method
+    def create_recurring_instance(self, is_subtask, parent=None):
+        if is_subtask:
+            task = parent.new_subtask()
+        else:
+            task = self.req.new_task()
+        task.set_recurrence_attribute(self.get_recurrence_attribute())
+        task.set_title(self.get_title())
+        task.set_rid(self.get_rid())
+        #add tags
+        for t in self.get_tags():
+            task.add_tag(t.get_name())
+        #Before setting content set all attribute values.
+        task.set_text(self.get_text())
+        task.set_start_date(self.get_start_date())
+        #TODO calculate new due date depending on the recurrence details.
+        new_duedate = self.calculate_new_due_date()
+        task.set_due_date(new_duedate)
+        task.set_endon_date(self.get_endon_date())
+
+        #fire all recrrence methods
+        task.set_recurrence_repeats(self.get_recurrence_repeats())
+        task.set_recurrence_frequency(self.get_recurrence_frequency())
+        task.set_recurrence_onthe(self.get_recurrence_onthe())
+        task.set_recurrence_onday(self.get_recurrence_onday())
+        task.set_recurrence_endson(self.endson, self.get_recurrence_endson())
+        task.set_recurrence_days(self.get_recurrence_days())
+        self.sync()
+        return task
+
+    def do_prior_status_setting(self, status):
+        if status in [self.STA_DONE, self.STA_DISMISSED]:
+            if self.recurringtask == "True":
+                self.validate_task(status)
+
+    def activate_create_instance(self):
+        for task in self.get_self_and_all_subtasks():
+            if not self.is_subtask:
+                self.parent = task.create_recurring_instance(self.is_subtask)
+                self.is_subtask = True
+            else:
+                if task.has_child():
+                    self.parent = task.create_recurring_instance(
+                        self.is_subtask, self.parent)
+                else:
+                    task.create_recurring_instance(
+                        self.is_subtask, self.parent)
+
     def set_status(self, status, donedate=None):
         old_status = self.status
         self.can_be_deleted = False
@@ -288,7 +548,7 @@ class Task(TreeNode):
     # constraints must go through tasks with undefined/fuzzy due dates too!
     #
     # Undefined/fuzzy task dates are NEVER to be updated. They are not
-    # sensitive to constraint. If you want to now what constraint there is
+    # sensitive to constraint. If you want to know what constraint there is
     # on this task's due date though, you can obtain it by using
     # get_due_date_constraint method.
     def set_due_date(self, new_duedate):
@@ -357,6 +617,56 @@ class Task(TreeNode):
         """ Returns the due date, which always respects all constraints """
         return self.due_date
 
+    def set_endon_date(self, new_endondate):
+        def __get_defined_parent_list(task):
+            """Recursively fetch a list of parents that have a defined due date
+               which is not fuzzy"""
+            parent_list = []
+            for par_id in task.parents:
+                par = self.req.get_task(par_id)
+                if par.get_due_date().is_fuzzy():
+                    parent_list += __get_defined_parent_list(par)
+                else:
+                    parent_list.append(par)
+            return parent_list
+
+        def __get_defined_child_list(task):
+            """Recursively fetch a list of children that have a defined
+               due date which is not fuzzy"""
+            child_list = []
+            for child_id in task.children:
+                child = self.req.get_task(child_id)
+                if child.get_due_date().is_fuzzy():
+                    child_list += __get_defined_child_list(child)
+                else:
+                    child_list.append(child)
+            return child_list
+
+        old_endon_date = self.endon_date
+        new_endondate_obj = Date(new_endondate)
+        self.endon_date = new_endondate_obj
+        if not new_endondate_obj.is_fuzzy():
+            # if the task's start date happens later than the
+            # new endon date, we update it (except for fuzzy dates)
+            #We should show it in red.
+            # we must apply the constraints to the defined & non-fuzzy children
+            # as well
+            for sub in __get_defined_child_list(self):
+                pass
+                #sub_duedate = sub.get_due_date()
+                # if the child's start date happens later than
+                # the task's new endon date, we update it
+                # (except for fuzzy start dates)
+                #We should show it in red.
+        # If the date changed, we notify the change for the children since the
+        # constraints might have changed
+        if old_endon_date != new_endondate_obj:
+            self.recursive_sync()
+
+    def get_endon_date(self):
+        """ Returns the endon date, which always respects all constraints """
+        return self.endon_date
+
     def get_urgent_date(self):
         """ Returns the most urgent due date among the tasks and its subtasks
         """
@@ -413,8 +723,11 @@ class Task(TreeNode):
         self.start_date = Date(fulldate)
         if not Date(fulldate).is_fuzzy() and \
             not self.due_date.is_fuzzy() and \
-                Date(fulldate) > self.due_date:
+            not self.endon_date.is_fuzzy() and \
+            Date(fulldate) > self.due_date and \
+                Date(fulldate) > self.endon_date:
             self.set_due_date(fulldate)
+            self.set_endon_date(fulldate)
         self.sync()
 
     def get_start_date(self):

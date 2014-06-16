@@ -49,6 +49,28 @@ def task_from_xml(task, xmlnode):
 
     task.set_uuid(xmlnode.getAttribute("uuid"))
     task.set_title(read_node(xmlnode, "title"))
+    if xmlnode.getAttribute("recur") != "":
+        task.set_recurrence_attribute(xmlnode.getAttribute("recur"))
+        task.set_rid(xmlnode.getAttribute("rid"))
+        for node in xmlnode.childNodes:
+            if node.tagName == "recurring":
+                repeats = node.childNodes[0].tagName
+                task.set_recurrence_repeats(repeats)
+                frequency = read_node(xmlnode, "frequency")
+                task.set_recurrence_frequency(frequency)
+                if repeats == "Weekly":
+                    days = read_node(xmlnode, "day")
+                    task.set_recurrence_days(days)
+                elif repeats == "Monthly":
+                    onthe = read_node(xmlnode, "on")
+                    onday = read_node(xmlnode, "day")
+                    task.set_recurrence_onthe(onthe)
+                    task.set_recurrence_onday(onday)
+                endon_child = node.childNodes[1]
+                for node in endon_child.childNodes:
+                    task.set_recurrence_endson(
+                        node.tagName, read_node(
+                            xmlnode, "%s" % (node.tagName)))
 
     status = xmlnode.getAttribute("status")
     donedate = Date.parse(read_node(xmlnode, "donedate"))
@@ -115,11 +137,45 @@ def task_to_xml(doc, task):
     t_xml.setAttribute("id", task.get_id())
     t_xml.setAttribute("status", task.get_status())
     t_xml.setAttribute("uuid", task.get_uuid())
+    recure_val = task.get_recurrence_attribute()
+
     tags_str = ""
     for tag in task.get_tags_name():
         tags_str = tags_str + saxutils.escape(str(tag)) + ","
     t_xml.setAttribute("tags", tags_str[:-1])
     cleanxml.addTextNode(doc, t_xml, "title", task.get_title())
+
+    if recure_val == "True":
+        t_xml.setAttribute("recur", task.get_recurrence_attribute())
+        t_xml.setAttribute("rid", task.get_rid())
+        whence = task.get_recurrence_repeats()
+        recur_xml = doc.createElement("recurring")
+        whence_xml = doc.createElement("%s" % (whence))
+        repeats_xml = doc.createElement("repeats")
+        endson_xml = doc.createElement("endson")
+        t_xml.appendChild(recur_xml)
+        recur_xml.appendChild(whence_xml)
+        whence_xml.appendChild(repeats_xml)
+        recur_xml.appendChild(endson_xml)
+        cleanxml.addTextNode(
+            doc, repeats_xml, "frequency", task.get_recurrence_frequency())
+        if whence == "Weekly":
+            cleanxml.addTextNode(
+                doc, repeats_xml, "day", task.get_recurrence_days())
+        elif whence == "Monthly":
+            cleanxml.addTextNode(
+                doc, repeats_xml, "on", task.get_recurrence_onthe())
+            cleanxml.addTextNode(
+                doc, repeats_xml, "day", task.get_recurrence_onday())
+        if task.endson == "date":
+            cleanxml.addTextNode(
+                doc, endson_xml, "%s" % (task.endson),
+                task.get_endon_date().xml_str())
+        else:
+            cleanxml.addTextNode(
+                doc, endson_xml, "%s" % (task.endson),
+                task.get_recurrence_endson())
+
     cleanxml.addTextNode(doc, t_xml, "duedate", task.get_due_date().xml_str())
     cleanxml.addTextNode(doc, t_xml, "modified", task.get_modified_string())
     cleanxml.addTextNode(doc, t_xml, "startdate",
