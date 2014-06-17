@@ -29,6 +29,7 @@ class GnomeConfig:
     EDITOR_UI_FILE = os.path.join(current_rep, "taskeditor.ui")
     CALENDAR_UI_FILE = os.path.join(current_rep, "calendar.ui")
     NOTIFY_UI_FILE = os.path.join(current_rep, "notifydialog.ui")
+    EDITEVENT_UI_FILE = os.path.join(current_rep, "editevent.ui")
 
     MARK_DONE = _("Mark as Done")
     MARK_UNDONE = _("Mark as not Done")
