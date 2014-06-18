@@ -20,7 +20,7 @@
 
 from gi.repository import Gtk
 
-from GTG import ngettext
+from GTG import _, ngettext
 from GTG.gtk.editor import GnomeConfig
 
 
@@ -31,10 +31,13 @@ class EditEventUI():
         self.builder = Gtk.Builder()
         self.builder.add_from_file(GnomeConfig.EDITEVENT_UI_FILE)
         signals = {"on_following_event_activate": self.on_following_pressed,
-                    "on_only_this_event_activate": self.on_only_pressed,
-                    "on_all_event_activate": self.on_all_pressed,
-                   "on_cancel_activate": lambda x: x.hide, }
+                   "on_only_this_event_activate": self.on_only_pressed,
+                   "on_all_event_activate": self.on_all_pressed,
+                   "on_cancel_activate": self.on_cancel_pressed, }
         self.builder.connect_signals(signals)
+
+    def on_cancel_pressed(self, widget):
+        self.builder.get_object("confirm_editevent").hide()
 
     def on_following_pressed(self, widget):
         pass
@@ -44,6 +47,7 @@ class EditEventUI():
 
     def on_all_pressed(self, widget):
         pass
+
 
     def editevent(self):
         cdlabel2 = self.builder.get_object("cdr-label2")
@@ -57,17 +61,17 @@ class EditEventUI():
             "Cancel this change",
             0))
         cdlabel4 = self.builder.get_object("cdr-label4")
-        cdlabel3.set_label(ngettext(
+        cdlabel4.set_label(ngettext(
             "Only this event",
             "Only this event",
             0))
-        cdlabel4 = self.builder.get_object("cdr-label5")
-        cdlabel3.set_label(ngettext(
+        cdlabel5 = self.builder.get_object("cdr-label5")
+        cdlabel5.set_label(ngettext(
             "All events",
             "All events",
             0))
-        cdlabel4 = self.builder.get_object("cdr-label6")
-        cdlabel3.set_label(ngettext(
+        cdlabel6 = self.builder.get_object("cdr-label6")
+        cdlabel6.set_label(ngettext(
             "Following events",
             "Following events",
             0))

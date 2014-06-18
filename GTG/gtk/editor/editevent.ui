@@ -8,7 +8,7 @@
     <property name="title" translatable="yes">Edit recurring event</property>
     <property name="window_position">center-on-parent</property>
     <property name="type_hint">dialog</property>
-    <signal name="close" handler="on_cancel_clicked" swapped="no"/>
+    <signal name="close" handler="on_cancel_activate" swapped="no"/>
     <child internal-child="vbox">
       <object class="GtkBox" id="cdr-vbox1">
         <property name="visible">True</property>
@@ -32,7 +32,6 @@
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
                     <property name="receives_default">True</property>
-                    <signal name="activate" handler="on_cancel_activate" swapped="no"/>
                     <signal name="released" handler="on_cancel_activate" swapped="no"/>
                     <child>
                       <object class="GtkBox" id="cdr-box2">

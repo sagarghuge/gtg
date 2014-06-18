@@ -37,6 +37,7 @@ from GTG.tools.dates import Date
 from GTG.gtk.editor.calendar import GTGCalendar
 from GTG.gtk.help import add_help_shortcut
 from GTG.gtk.editor.notify_dialog import NotifyCloseUI
+from GTG.gtk.editor.edit_event import EditEventUI
 import uuid
 
 
@@ -61,6 +62,8 @@ class TaskEditor(object):
         self.config = taskconfig
         self.time = None
         self.days = None
+        self.modify = thisisnew
+        self.initial = False
         self.clipboard = clipboard
         self.builder = Gtk.Builder()
         self.builder.add_from_file(GnomeConfig.EDITOR_UI_FILE)
@@ -223,7 +226,7 @@ class TaskEditor(object):
         if self.task.get_recurrence_attribute() == "True":
             self.repeattask_button.set_active(True)
             self.get_recurrence_details()
-            self.update_summary()
+            #self.update_summary()
 
     def init_recurring(self):
         if not self.task.recurringtask:
@@ -636,6 +639,7 @@ class TaskEditor(object):
                 "days_combobox").set_active(days_dict[self.task.onday])
             self.builder.get_object(
                 "sequence_combobox").set_active(seq_dict[self.task.onthe])
+        self.initial = True
 
     def update_summary(self):
         #TODO Need to refine code.
@@ -682,7 +686,8 @@ class TaskEditor(object):
 
         self.builder.get_object("show_summary_label").\
             set_text(sum_txt)
-        #TODO set recurring task details
+        if self.initial:
+            self.modify = True
 
     def days_update(self):
         days = []
@@ -900,6 +905,12 @@ class TaskEditor(object):
 
     def quit(self, widget, data=None):
         if self.task.recurringtask == 'True':
+            if self.modify:
+                #TODO add flag in update summary 
+                editevent_dialog = EditEventUI()
+                editevent_dialog.editevent()
+                self.modify = False
+                return True
             if self.duedate_widget.get_text() == "":
                 notify_dialog = NotifyCloseUI()
                 notify_dialog.notifyclose()
