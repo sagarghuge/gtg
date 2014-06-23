@@ -63,6 +63,7 @@ class TaskEditor(object):
         self.time = None
         self.days = None
         self.modify = thisisnew
+        self.thisisnew = thisisnew
         self.initial = False
         self.clipboard = clipboard
         self.builder = Gtk.Builder()
@@ -905,12 +906,13 @@ class TaskEditor(object):
 
     def quit(self, widget, data=None):
         if self.task.recurringtask == 'True':
-            if self.modify:
-                #TODO add flag in update summary 
-                editevent_dialog = EditEventUI()
-                editevent_dialog.editevent()
-                self.modify = False
-                return True
+            if not self.thisisnew:
+                if self.modify:
+                    #TODO add flag in update summary 
+                    editevent_dialog = EditEventUI()
+                    editevent_dialog.editevent()
+                    self.modify = False
+                    return True
             if self.duedate_widget.get_text() == "":
                 notify_dialog = NotifyCloseUI()
                 notify_dialog.notifyclose()

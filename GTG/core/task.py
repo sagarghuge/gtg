@@ -440,16 +440,17 @@ class Task(TreeNode):
 
     def activate_create_instance(self):
         for task in self.get_self_and_all_subtasks():
-            if not self.is_subtask:
-                self.parent = task.create_recurring_instance(self.is_subtask)
-                self.is_subtask = True
-            else:
-                if task.has_child():
-                    self.parent = task.create_recurring_instance(
-                        self.is_subtask, self.parent)
+            if task.get_status() != self.STA_DONE:
+                if not self.is_subtask:
+                    self.parent = task.create_recurring_instance(self.is_subtask)
+                    self.is_subtask = True
                 else:
-                    task.create_recurring_instance(
-                        self.is_subtask, self.parent)
+                    if task.has_child():
+                        self.parent = task.create_recurring_instance(
+                            self.is_subtask, self.parent)
+                    else:
+                        task.create_recurring_instance(
+                            self.is_subtask, self.parent)
 
     def set_status(self, status, donedate=None):
         old_status = self.status
