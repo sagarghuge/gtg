@@ -119,6 +119,7 @@ class TaskBrowser(GObject.GObject):
                                         self._update_window_title)
         self._update_window_title()
         vmanager.timer.connect('refresh', self.refresh_workview)
+        self.check_instance()
 
 ### INIT HELPER FUNCTIONS #####################################################
 #
@@ -560,6 +561,15 @@ class TaskBrowser(GObject.GObject):
             self.set_view('workview')
 
         self.in_toggle_workview = False
+
+    def check_instance(self):
+        tasks = self.req.get_tasks_tree('active', False).get_all_nodes()
+        tasktree = self.req.get_main_view()
+        #Skip overdue tasks
+        for task_id in tasks:
+            task = tasktree.get_node(task_id)
+            if task.recurringtask == "True" and task.get_days_left() <= 0:
+                task.check_overdue_tasks()
 
     def refresh_workview(self, timer):
         task_tree = self.req.get_tasks_tree(name='active', refresh=False)

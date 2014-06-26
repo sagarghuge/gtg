@@ -73,6 +73,7 @@ class Task(TreeNode):
         self.rid = None
         self.parent = None
         self.is_subtask = False
+        self.new_instance = None
         # tags
         self.tags = []
         self.req = requester
@@ -431,12 +432,16 @@ class Task(TreeNode):
         task.set_recurrence_endson(self.endson, self.get_recurrence_endson())
         task.set_recurrence_days(self.get_recurrence_days())
         self.sync()
+        self.new_instance = task
         return task
 
     def do_prior_status_setting(self, status):
         if status in [self.STA_DONE, self.STA_DISMISSED]:
             if self.recurringtask == "True":
-                self.validate_task(status)
+                if self.get_days_left() <=0:
+                    self.set_status(self.STA_DONE)
+                else:
+                    self.validate_task(status)
 
     def activate_create_instance(self):
         for task in self.get_self_and_all_subtasks():
@@ -451,6 +456,17 @@ class Task(TreeNode):
                     else:
                         task.create_recurring_instance(
                             self.is_subtask, self.parent)
+
+    def check_overdue_tasks(self):
+        current_date = self.get_current_date()
+        while True:
+            if self.new_instance is not None:
+                if self.new_instance.get_days_left() >= 0:
+                    break
+                else:
+                    self.new_instance.validate_task()
+            else:
+                self.validate_task()
 
     def set_status(self, status, donedate=None):
         old_status = self.status
