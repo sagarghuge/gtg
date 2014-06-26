@@ -28,6 +28,7 @@ import re
 import uuid
 import xml.dom.minidom
 import xml.sax.saxutils as saxutils
+import copy
 
 from GTG import _
 from GTG.tools.dates import Date
@@ -444,18 +445,18 @@ class Task(TreeNode):
                     self.validate_task(status)
 
     def activate_create_instance(self):
-        for task in self.get_self_and_all_subtasks():
-            if task.get_status() != self.STA_DONE:
-                if not self.is_subtask:
-                    self.parent = task.create_recurring_instance(self.is_subtask)
+        for task in self.get_self_and_all_subtasks(tasks=[]):
+            if not self.is_subtask:
+                self.parent = task.create_recurring_instance(self.is_subtask)
+                if task.has_child():
                     self.is_subtask = True
+            else:
+                if task.has_child():
+                    self.parent = task.create_recurring_instance(
+                        self.is_subtask, self.parent)
                 else:
-                    if task.has_child():
-                        self.parent = task.create_recurring_instance(
-                            self.is_subtask, self.parent)
-                    else:
-                        task.create_recurring_instance(
-                            self.is_subtask, self.parent)
+                    task.create_recurring_instance(
+                        self.is_subtask, self.parent)
 
     def check_overdue_tasks(self):
         current_date = self.get_current_date()
