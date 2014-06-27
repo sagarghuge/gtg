@@ -289,23 +289,23 @@ class Task(TreeNode):
         if self.endson == "never":  # Never
             # Don't set DONE status
             if self.due_date.__le__(current_date):
-                self.activate_create_instance()
+                return self.activate_create_instance()
             elif status == self.STA_DONE:
-                self.activate_create_instance()
+                return self.activate_create_instance()
         elif self.endson == "date":  # On
             # Send DONE status on the given date
             if self.get_endon_date().__eq__(current_date):
                 self.set_status(self.STA_DONE)
             elif self.due_date.__lt__(current_date):
-                self.activate_create_instance()
+                return self.activate_create_instance()
             elif self.due_date.__lt__(self.endon_date):
-                self.activate_create_instance()
+                return self.activate_create_instance()
         elif self.endson == "occurrence" or self.endson == "occurrences":
             # Send DONE status after the given occurrence
             # get count of task having same rid
             done_occurrences = self.req.get_rid_count(self.tid)
             if len(done_occurrences) < int(self.occurrences):
-                self.activate_create_instance()
+                return self.activate_create_instance()
             else:
                 self.set_status(self.STA_DONE)
 
@@ -406,7 +406,7 @@ class Task(TreeNode):
                     self.get_due_date(), 12 * int(self.frequency))
 
     #TODO refactor this method and create copy and create task new method
-    def create_recurring_instance(self, is_subtask, parent=None):
+    def create_recurring_instance(self, is_subtask=False, parent=None):
         if is_subtask:
             task = parent.new_subtask()
         else:
@@ -432,8 +432,6 @@ class Task(TreeNode):
         task.set_recurrence_onday(self.get_recurrence_onday())
         task.set_recurrence_endson(self.endson, self.get_recurrence_endson())
         task.set_recurrence_days(self.get_recurrence_days())
-        self.sync()
-        self.new_instance = task
         return task
 
     def do_prior_status_setting(self, status):
@@ -444,30 +442,25 @@ class Task(TreeNode):
                 else:
                     self.validate_task(status)
 
-    def activate_create_instance(self):
-        for task in self.get_self_and_all_subtasks(tasks=[]):
-            if not self.is_subtask:
-                self.parent = task.create_recurring_instance(self.is_subtask)
-                if task.has_child():
-                    self.is_subtask = True
-            else:
-                if task.has_child():
-                    self.parent = task.create_recurring_instance(
-                        self.is_subtask, self.parent)
-                else:
-                    task.create_recurring_instance(
-                        self.is_subtask, self.parent)
+    def activate_create_instance(self, rec=False):
+        if not rec:
+            self.parent = self.create_recurring_instance()
+        for sub_task in self.get_subtasks():
+            if sub_task.recurringtask == "True":
+                sub_task.parent = sub_task.create_recurring_instance(True, self.parent)
+                if sub_task.has_child():
+                    sub_task.activate_create_instance(True)
+        return self.parent
 
     def check_overdue_tasks(self):
         current_date = self.get_current_date()
         while True:
-            if self.new_instance is not None:
-                if self.new_instance.get_days_left() >= 0:
-                    break
-                else:
-                    self.new_instance.validate_task()
+            if self.parent is not None:
+                self.parent = self.parent.validate_task()
+                if self.parent.get_due_date().__ge__(current_date):
+                     break
             else:
-                self.validate_task()
+                self.parent = self.validate_task()
 
     def set_status(self, status, donedate=None):
         old_status = self.status

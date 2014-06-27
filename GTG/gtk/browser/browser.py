@@ -565,11 +565,14 @@ class TaskBrowser(GObject.GObject):
     def check_instance(self):
         tasks = self.req.get_tasks_tree('active', False).get_all_nodes()
         tasktree = self.req.get_main_view()
+        subtasks = []
         #Skip overdue tasks
         for task_id in tasks:
             task = tasktree.get_node(task_id)
-            if task.recurringtask == "True" and task.get_days_left() <= 0:
-                task.check_overdue_tasks()
+            if task not in subtasks and not task.has_parent():
+                if task.recurringtask == "True" and task.get_days_left() <= 0:
+                    subtasks = task.get_subtasks()
+                    task.check_overdue_tasks()
 
     def refresh_workview(self, timer):
         task_tree = self.req.get_tasks_tree(name='active', refresh=False)
