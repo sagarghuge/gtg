@@ -570,7 +570,8 @@ class TaskBrowser(GObject.GObject):
         for task_id in tasks:
             task = tasktree.get_node(task_id)
             if task not in subtasks and not task.has_parent():
-                if task.recurringtask == "True" and task.get_days_left() <= 0 and \
+                print(task.get_days_left())
+                if task.recurringtask == "True" and task.get_days_left() < 0 and \
                     task.touched == "":
                     subtasks = task.get_subtasks()
                     task.set_touched("True")

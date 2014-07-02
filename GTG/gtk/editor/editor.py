@@ -37,7 +37,6 @@ from GTG.tools.dates import Date
 from GTG.gtk.editor.calendar import GTGCalendar
 from GTG.gtk.help import add_help_shortcut
 from GTG.gtk.editor.notify_dialog import NotifyCloseUI
-from GTG.gtk.editor.edit_event import EditEventUI
 import uuid
 
 
@@ -62,7 +61,6 @@ class TaskEditor(object):
         self.config = taskconfig
         self.time = None
         self.days = None
-        self.modify = thisisnew
         self.thisisnew = thisisnew
         self.initial = False
         self.clipboard = clipboard
@@ -126,6 +124,8 @@ class TaskEditor(object):
             "on_days_combobox_changed": self.days_combobox_value_changed,
             "on_sequence_combobox_changed":
             self.sequence_combobox_value_changed,
+            "on_all_instances_toggled": self.all_instance_toggled,
+            "on_current_instance_toggled": self.current_instance_toggled,
             "on_open_parent_clicked": self.open_parent_clicked,
             "on_move": self.on_move,
         }
@@ -688,7 +688,13 @@ class TaskEditor(object):
         self.builder.get_object("show_summary_label").\
             set_text(sum_txt)
         if self.initial:
-            self.modify = True
+            self.builder.get_object("box16").show()
+ 
+    def all_instance_toggled(self, widget):
+        pass
+
+    def current_instance_toggled(self, widget):
+        pass
 
     def days_update(self):
         days = []
@@ -906,13 +912,6 @@ class TaskEditor(object):
 
     def quit(self, widget, data=None):
         if self.task.recurringtask == 'True':
-            if not self.thisisnew:
-                if self.modify:
-                    #TODO add flag in update summary 
-                    editevent_dialog = EditEventUI()
-                    editevent_dialog.editevent()
-                    self.modify = False
-                    return True
             if self.duedate_widget.get_text() == "":
                 notify_dialog = NotifyCloseUI()
                 notify_dialog.notifyclose()

@@ -467,9 +467,12 @@ class Task(TreeNode):
         current_date = self.get_current_date()
         while True:
             if self.parent is not None:
-                self.parent = self.parent.validate_task(touched=touched)
                 if self.parent.get_due_date().__ge__(current_date):
-                     break
+                    # Reset the touch for last instance so that next
+                    # it will be considered for recurring
+                    self.parent.set_touched("")
+                    break
+                self.parent = self.parent.validate_task(touched=touched)
             else:
                 self.parent = self.validate_task(touched=touched)
 
