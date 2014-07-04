@@ -64,6 +64,8 @@ class TaskEditor(object):
         self.thisisnew = thisisnew
         self.initial = False
         self.clipboard = clipboard
+        self.modify = dict()
+        self.edit_event = True
         self.builder = Gtk.Builder()
         self.builder.add_from_file(GnomeConfig.EDITOR_UI_FILE)
         self.donebutton = self.builder.get_object("mark_as_done_editor")
@@ -230,7 +232,7 @@ class TaskEditor(object):
             #self.update_summary()
 
     def init_recurring(self):
-        if not self.task.recurringtask:
+        if self.task.recurringtask != "True":
             self.task.repeats = self.builder.get_object(
                 "repeats_combobox").get_active_text()
             self.task.frequency = self.builder.get_object(
@@ -242,6 +244,8 @@ class TaskEditor(object):
             self.task.days = self.days_update()
             self.task.endson = self.builder.get_object(
                 "end_combobox").get_active_text().lower()
+            self.task.occurrences = self.builder.get_object(
+                "endafter_spinbutton").get_value_as_int()
 
     # Define accelerator-keys for this dialog
     # TODO: undo/redo
@@ -440,12 +444,15 @@ class TaskEditor(object):
     def date_changed(self, widget, data):
         try:
             if data == GTGCalendar.DATE_KIND_ENDON:
-                if Date.parse(widget.get_text()):
+                parsed_date = Date.parse(widget.get_text())
+                if self.startdate_widget.get_text() != "":
                     if Date.parse(self.startdate_widget.get_text()).__gt__(
-                            Date.parse(widget.get_text())):
+                        parsed_date):
                         valid = False
                     else:
                         valid = True
+                else:
+                    valid = True
             else:
                 Date.parse(widget.get_text())
                 valid = True
@@ -688,13 +695,21 @@ class TaskEditor(object):
         self.builder.get_object("show_summary_label").\
             set_text(sum_txt)
         if self.initial:
+            #TODO call a method which will check actual modification
+            self.check_edit_event()
+
+    def check_edit_event(self):
+        if any(self.modify):
             self.builder.get_object("box16").show()
- 
+            self.builder.get_object("all_instances").set_active(True)
+        else:
+            self.builder.get_object("box16").hide()
+
     def all_instance_toggled(self, widget):
-        pass
+        self.edit_event = True
 
     def current_instance_toggled(self, widget):
-        pass
+        self.edit_event = False
 
     def days_update(self):
         days = []
@@ -730,25 +745,71 @@ class TaskEditor(object):
         return days_sum_txt
 
     def days_checkbuttons_toggled(self, widget):
+        if self.initial:
+            try:
+                val = self.modify["days"]
+            except:
+                self.modify["days"] = self.task.days
+            new_val = self.days_update()
+            if self.modify["days"] == new_val:
+                self.modify.__delitem__("days")
         self.task.days = self.days_update()
         self.update_summary()
 
     def days_combobox_value_changed(self, widget):
+        if self.initial:
+            try:
+                if self.task.onday is None:
+                    self.task.onday = self.widget.get_active_text()
+                val = self.modify["onday"]
+            except:
+                self.modify["onday"] = self.task.onday
+            new_val = widget.get_active_text()
+            if self.modify["onday"] == new_val:
+                self.modify.__delitem__("onday")
         self.task.onday = widget.get_active_text()
         self.update_summary()
 
     def sequence_combobox_value_changed(self, widget):
+        if self.initial:
+            try:
+                if self.task.onthe is None:
+                    self.task.onthe = self.widget.get_active_text()
+                val = self.modify["onthe"]
+            except:
+                self.modify["onthe"] = self.task.onthe
+            new_val = widget.get_active_text()
+            if self.modify["onthe"] == new_val:
+                self.modify.__delitem__("onthe")
         self.task.onthe = widget.get_active_text()
         self.update_summary()
 
     def end_combobox_value_changed(self, widget):
         index = widget.get_active()
+        if self.initial:
+            try:
+                val = self.modify["end"]
+            except:
+                if self.task.endson == "date":
+                    self.modify["end"] = 1
+                elif self.task.endson == "never":
+                    self.modify["end"] = 2
+                elif self.task.endson == "occurrences" or self.task.endson == "occurrence":
+                    self.task.occurrences = self.builder.get_object(
+                        "endafter_spinbutton").get_value_as_int()
+                    self.modify["end"] = 0
+            new_val = index
+            if self.modify["end"] == new_val:
+                self.modify.__delitem__("end")
         if index == 0:
             self.builder.get_object("box11").show()
             self.builder.get_object("endafter_spinbutton").show()
             self.builder.get_object("endonbox").hide()
             self.builder.get_object("occurrence_label").show()
-            #set endson attribute to write in xml
+            self.task.endson = self.builder.get_object(
+            "occurrence_label").get_text()
+            self.task.occurrences = self.builder.get_object(
+                "endafter_spinbutton").get_value_as_int()
         elif index == 1:
             self.builder.get_object("box11").show()
             self.builder.get_object("endafter_spinbutton").hide()
@@ -763,6 +824,14 @@ class TaskEditor(object):
     def every_spinbutton_value_changed(self, widget):
         label = self.builder.get_object("common_label")
         spinbutton = self.builder.get_object("every_spinbutton")
+        if self.initial:
+            try:
+                val = self.modify["frequency"]
+            except:
+                self.modify["frequency"] = int(self.task.frequency)
+            new_val = spinbutton.get_value_as_int()
+            if self.modify["frequency"] == new_val:
+                self.modify.__delitem__("frequency")
         self.task.frequency = spinbutton.get_value_as_int()
         self.set_label_value(label, spinbutton)
         self.update_summary()
@@ -770,6 +839,14 @@ class TaskEditor(object):
     def endafter_spinbutton_value_changed(self, widget):
         label = self.builder.get_object("occurrence_label")
         spinbutton = self.builder.get_object("endafter_spinbutton")
+        if self.initial:
+            try:
+                val = self.modify["occurrences"]
+            except:
+                self.modify["occurrences"] = self.task.occurrences
+            new_val = spinbutton.get_value_as_int()
+            if self.modify["occurrences"] == new_val:
+                self.modify.__delitem__("occurrences")
         self.task.occurrences = spinbutton.get_value_as_int()
         self.set_label_value(label, spinbutton)
         self.task.endson = self.builder.get_object(
@@ -786,6 +863,14 @@ class TaskEditor(object):
             label.set_text(label_text.strip("s"))
 
     def repeats_combobox_value_changed(self, widget):
+        if self.initial:
+            try:
+                val = self.modify["repeat"]
+            except:
+                self.modify["repeat"] = self.task.repeats
+            new_val = widget.get_active_text()
+            if self.modify["repeat"] == new_val:
+                self.modify.__delitem__("repeat")
         index = widget.get_active()
         self.task.repeats = widget.get_active_text()
         label = self.builder.get_object("common_label")

@@ -75,6 +75,7 @@ class Task(TreeNode):
         self.is_subtask = False
         self.new_instance = None
         self.touched = None
+        self.endbox_index = None
         # tags
         self.tags = []
         self.req = requester
