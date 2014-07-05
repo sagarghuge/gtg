@@ -321,6 +321,10 @@ class DataStore(object):
         self._tasks.add_node(task)
         return task
 
+    def create_hidden_task(self):
+        task = self.task_factory(str(uuid.uuid4()), True)
+        return task
+
     def push_task(self, task):
         """
         Adds the given task object to the task tree. In other words, registers

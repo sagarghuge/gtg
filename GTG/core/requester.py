@@ -126,6 +126,10 @@ class Requester(GObject.GObject):
                 task.tag_added(t)
         return task
 
+    def create_hidden_task(self, newtask=True):
+        task = self.ds.create_hidden_task()
+        return task
+
     def delete_task(self, tid, recursive=True):
         """Delete the task 'tid' and, by default, delete recursively
         all the childrens.
