@@ -28,7 +28,6 @@ import re
 import uuid
 import xml.dom.minidom
 import xml.sax.saxutils as saxutils
-import copy
 
 from GTG import _
 from GTG.tools.dates import Date
@@ -75,6 +74,7 @@ class Task(TreeNode):
         self.parent = None
         self.is_subtask = False
         self.new_instance = None
+        self.touched = None
         # tags
         self.tags = []
         self.req = requester
@@ -109,6 +109,13 @@ class Task(TreeNode):
 
     def get_rid(self):
         return str(self.rid)
+
+    def set_touched(self, touched):
+        self.touched = touched
+
+    def get_touched(self):
+        if self.touched is not None:
+            return str(self.touched)
 
     def get_recurrence_attribute(self):
         #TODO Will get the attribute recurrence
@@ -284,28 +291,28 @@ class Task(TreeNode):
         now = datetime.now()
         return Date.parse(now.strftime("%Y-%m-%d"))
 
-    def validate_task(self, status=None):
+    def validate_task(self, status=None, touched=False):
         current_date = self.get_current_date()
         if self.endson == "never":  # Never
             # Don't set DONE status
             if self.due_date.__le__(current_date):
-                return self.activate_create_instance()
+                return self.activate_create_instance(touched=touched)
             elif status == self.STA_DONE:
-                return self.activate_create_instance()
+                return self.activate_create_instance(touched=touched)
         elif self.endson == "date":  # On
             # Send DONE status on the given date
             if self.get_endon_date().__eq__(current_date):
                 self.set_status(self.STA_DONE)
             elif self.due_date.__lt__(current_date):
-                return self.activate_create_instance()
+                return self.activate_create_instance(touched=touched)
             elif self.due_date.__lt__(self.endon_date):
-                return self.activate_create_instance()
+                return self.activate_create_instance(touched=touched)
         elif self.endson == "occurrence" or self.endson == "occurrences":
             # Send DONE status after the given occurrence
             # get count of task having same rid
             done_occurrences = self.req.get_rid_count(self.tid)
             if len(done_occurrences) < int(self.occurrences):
-                return self.activate_create_instance()
+                return self.activate_create_instance(touched=touched)
             else:
                 self.set_status(self.STA_DONE)
 
@@ -406,7 +413,8 @@ class Task(TreeNode):
                     self.get_due_date(), 12 * int(self.frequency))
 
     #TODO refactor this method and create copy and create task new method
-    def create_recurring_instance(self, is_subtask=False, parent=None):
+    def create_recurring_instance(
+        self, is_subtask=False, parent=None, touched=False):
         if is_subtask:
             task = parent.new_subtask()
         else:
@@ -432,6 +440,8 @@ class Task(TreeNode):
         task.set_recurrence_onday(self.get_recurrence_onday())
         task.set_recurrence_endson(self.endson, self.get_recurrence_endson())
         task.set_recurrence_days(self.get_recurrence_days())
+        if touched:
+            task.set_touched("True")
         return task
 
     def do_prior_status_setting(self, status):
@@ -442,25 +452,26 @@ class Task(TreeNode):
                 else:
                     self.validate_task(status)
 
-    def activate_create_instance(self, rec=False):
+    def activate_create_instance(self, rec=False, touched=False):
         if not rec:
-            self.parent = self.create_recurring_instance()
+            self.parent = self.create_recurring_instance(touched=touched)
         for sub_task in self.get_subtasks():
             if sub_task.recurringtask == "True":
-                sub_task.parent = sub_task.create_recurring_instance(True, self.parent)
+                sub_task.parent = sub_task.create_recurring_instance(
+                    True, self.parent, touched=touched)
                 if sub_task.has_child():
-                    sub_task.activate_create_instance(True)
+                    sub_task.activate_create_instance(True, touched=touched)
         return self.parent
 
-    def check_overdue_tasks(self):
+    def check_overdue_tasks(self, touched=False):
         current_date = self.get_current_date()
         while True:
             if self.parent is not None:
-                self.parent = self.parent.validate_task()
+                self.parent = self.parent.validate_task(touched=touched)
                 if self.parent.get_due_date().__ge__(current_date):
                      break
             else:
-                self.parent = self.validate_task()
+                self.parent = self.validate_task(touched=touched)
 
     def set_status(self, status, donedate=None):
         old_status = self.status

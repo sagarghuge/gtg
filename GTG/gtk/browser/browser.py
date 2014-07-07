@@ -570,9 +570,12 @@ class TaskBrowser(GObject.GObject):
         for task_id in tasks:
             task = tasktree.get_node(task_id)
             if task not in subtasks and not task.has_parent():
-                if task.recurringtask == "True" and task.get_days_left() <= 0:
+                if task.recurringtask == "True" and task.get_days_left() <= 0 and \
+                    task.touched == "":
                     subtasks = task.get_subtasks()
-                    task.check_overdue_tasks()
+                    task.set_touched("True")
+                    task.sync()
+                    task.check_overdue_tasks(True)
 
     def refresh_workview(self, timer):
         task_tree = self.req.get_tasks_tree(name='active', refresh=False)
