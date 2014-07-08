@@ -952,14 +952,16 @@ class TaskEditor(object):
 
     def edit_instances(self):
         self.check_modified()
+        if self.edit_event:
+            self.req.delete_task(self.task_clone.get_id())
         if any(self.modify):
             if self.edit_event:
                 for task_id in self.req.get_all_recurring_instances(self.task.get_id()):
                     t = self.req.get_task(task_id)
                     for method in self.modify:
-                        print (method)
                         if method == "endson":
                             t.endson = self.task.endson
+                            getattr(t, method.replace("get", "set")) (t.endson, etattr(self.task, method)())
                         else:
                             getattr(t, method.replace("get", "set")) (getattr(self.task, method)())
                         t.sync()
