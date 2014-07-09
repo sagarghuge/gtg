@@ -949,6 +949,11 @@ class TaskEditor(object):
                 if i:
                     i.set_to_keep()
         self.vmanager.close_task(tid)
+        if self.task.recurringtask == 'True':
+            if self.task.get_days_left() < 0 and self.task.touched is None:
+                self.task.set_touched("True")
+                self.task.check_overdue_tasks(True)
+                self.task.sync()
 
     def edit_instances(self):
         self.check_modified()
