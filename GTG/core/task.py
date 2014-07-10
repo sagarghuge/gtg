@@ -293,6 +293,27 @@ class Task(TreeNode):
         now = datetime.now()
         return Date.parse(now.strftime("%Y-%m-%d"))
 
+    def validate_task_after_editing(self):
+        rtid = self.req.get_all_recurring_instances(self.get_id())
+        del_list = []
+        find_list = []
+        for tid in rtid:
+            present = False
+            task = self.req.get_task(tid)
+            print(task.get_due_date())
+            temp = task.calculate_new_due_date()
+            for tid in rtid:
+                t = self.req.get_task(tid)
+                if temp.__eq__(t.get_due_date()):
+                    present = True
+                    find_list.append(tid)
+                    break
+                else:
+                    if not del_list.__contains__(tid):
+                        del_list.append(tid)
+            if not present:
+                task = task.create_recurring_instance(False)
+    
     def validate_task(self, status=None, touched=False):
         current_date = self.get_current_date()
         if self.endson == "never":  # Never

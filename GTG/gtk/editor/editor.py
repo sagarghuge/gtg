@@ -970,6 +970,7 @@ class TaskEditor(object):
                         else:
                             getattr(t, method.replace("get", "set")) (getattr(self.task, method)())
                         t.sync()
+                self.task.validate_task_after_editing()
             else:
                 # edit current event
                 pass
