@@ -295,11 +295,34 @@ class Task(TreeNode):
 
     def validate_task_after_editing(self):
         rtid = self.req.get_all_recurring_instances(self.get_id())
-        del_list = []
-        find_list = []
+        due_date_list = list()
+        task_list = list()
         for tid in rtid:
-            print(self.req.get_task(tid).get_due_date())
- 
+            task = self.req.get_task(tid)
+            task_list.append(task)
+            due_date_list.append(task.get_due_date())
+        
+        task_list.sort(key=lambda t: t.get_due_date())
+        due_date_list.sort()
+        no_instance = False
+        del_task = list()
+        due_date = task_list[0].calculate_new_due_date()
+        current_index = 0
+        for task in task_list:
+            due_date = task.calculate_new_due_date()
+            if del_task.__contains__(task):
+                continue
+            if due_date_list.__contains__(due_date):
+                index = due_date_list.index(due_date)
+                for i in range(current_index+1, index):
+                    del_task.append(task_list[i])
+                current_index = index
+            else:
+                if task.get_due_date().__le__(self.get_current_date()):
+                    task.activate_create_instance(touched=True)
+        for task in del_task:
+            self.req.delete_task(task.get_id())
+
     def validate_task(self, status=None, touched=False):
         current_date = self.get_current_date()
         if self.endson == "never":  # Never

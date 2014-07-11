@@ -968,8 +968,9 @@ class TaskEditor(object):
                             t.endson = self.task.endson
                             getattr(t, method.replace("get", "set")) (t.endson, etattr(self.task, method)())
                         else:
-                            getattr(t, method.replace("get", "set")) (getattr(self.task, method)())
+                            getattr(t, method.replace("get", "set")) (t.endson, getattr(self.task, method)())
                         t.sync()
+                print("in edit instances ")
                 self.task.validate_task_after_editing()
             else:
                 # edit current event

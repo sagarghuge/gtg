@@ -162,12 +162,6 @@ class Requester(GObject.GObject):
             if task.recurringtask == "True" and task.get_days_left() >= 0:
                 task.validate_task()
 
-    def validate_edit_tasks(self, task_id):
-        rtid = self.get_recurring_instances(task_id, 'active')
-        tasktree = self.get_main_view()
-        task = tasktree.get_node(rtid[0])
-        task.validate_edit_tasks(rtid)
-
     def get_all_recurring_instances(self, tid):
         "Compare rid and return all task which are having same rid"
         rtid = self.get_recurring_instances(tid , 'active')
