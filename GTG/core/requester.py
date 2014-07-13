@@ -126,10 +126,6 @@ class Requester(GObject.GObject):
                 task.tag_added(t)
         return task
 
-    def create_hidden_task(self, newtask=True):
-        task = self.ds.create_hidden_task()
-        return task
-
     def delete_task(self, tid, recursive=True):
         """Delete the task 'tid' and, by default, delete recursively
         all the childrens.
@@ -169,6 +165,7 @@ class Requester(GObject.GObject):
     def get_all_recurring_instances(self, tid):
         "Compare rid and return all task which are having same rid"
         rtid = self.get_recurring_instances(tid , 'active')
+        return rtid
 
     def get_recurring_instances(self, tid, status):
         # return list of instances of rid

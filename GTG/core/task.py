@@ -44,6 +44,7 @@ class Task(TreeNode):
     STA_ACTIVE = "Active"
     STA_DISMISSED = "Dismiss"
     STA_DONE = "Done"
+    STA_HIDDEN = "Hidden"
 
     def __init__(self, ze_id, requester, newtask=False):
         TreeNode.__init__(self, ze_id)
@@ -75,6 +76,7 @@ class Task(TreeNode):
         self.is_subtask = False
         self.new_instance = None
         self.touched = None
+        self.endbox_index = None
         # tags
         self.tags = []
         self.req = requester

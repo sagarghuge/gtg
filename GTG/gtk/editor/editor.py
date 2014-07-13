@@ -65,6 +65,7 @@ class TaskEditor(object):
         self.initial = False
         self.clipboard = clipboard
         self.edit_event = True
+        self.modify = list()
         self.task_clone = None
         self.builder = Gtk.Builder()
         self.builder.add_from_file(GnomeConfig.EDITOR_UI_FILE)
@@ -236,7 +237,30 @@ class TaskEditor(object):
             #self.update_summary()
 
     def create_task_clone(self):
-        self.task_clone = self.req.create_hidden_task()
+        self.task_clone = self.req.new_task()
+        self.task_clone.set_status(self.task_clone.STA_HIDDEN)
+        self.task_clone.set_recurrence_attribute(self.task.get_recurrence_attribute())
+        self.task_clone.set_title(self.task.get_title())
+        self.task_clone.set_rid(self.task.get_rid())
+        #add tags
+        for t in self.task.get_tags():
+            self.task_clone.add_tag(t.get_name())
+        #Before setting content set all attribute values.
+        if self.task.get_text() != "":
+            self.task_clone.set_text(self.task.get_text())
+        self.task_clone.set_start_date(self.task.get_start_date())
+        #TODO calculate new due date depending on the recurrence details.
+        self.task_clone.set_due_date(self.task.get_due_date())
+        self.task_clone.set_endon_date(self.task.get_endon_date())
+        self.task_clone.set_modified(self.task.get_modified())
+ 
+        #fire all recrrence methods
+        self.task_clone.set_recurrence_repeats(self.task.get_recurrence_repeats())
+        self.task_clone.set_recurrence_frequency(self.task.get_recurrence_frequency())
+        self.task_clone.set_recurrence_onthe(self.task.get_recurrence_onthe())
+        self.task_clone.set_recurrence_onday(self.task.get_recurrence_onday())
+        self.task_clone.set_recurrence_endson(self.task.endson, self.task.get_recurrence_endson())
+        self.task_clone.set_recurrence_days(self.task.get_recurrence_days())
 
     def init_recurring(self):
         if self.task.recurringtask != "True":
@@ -827,7 +851,8 @@ class TaskEditor(object):
     def repeattask_toggled(self, widget):
         if widget.get_active():
             self.task.recurringtask = 'True'
-            self.task.rid = str(uuid.uuid4())
+            if self.thisisnew:
+                self.task.rid = str(uuid.uuid4())
             self.builder.get_object("repeattaskbox").show()
             self.builder.get_object("end_combobox").set_row_span_column(0)
             self.builder.get_object("box6").show()
@@ -926,16 +951,51 @@ class TaskEditor(object):
         self.vmanager.close_task(tid)
 
     def edit_instances(self):
-        if self.edit_event:
-            # all
-            pass
-        else:
-            # only one
-            pass
+        self.check_modified()
+        if any(self.modify):
+            if self.edit_event:
+                for task_id in self.req.get_all_recurring_instances(self.task.get_id()):
+                    t = self.req.get_task(task_id)
+                    for method in self.modify:
+                        print (method)
+                        if method == "endson":
+                            t.endson = self.task.endson
+                        else:
+                            getattr(t, method.replace("get", "set")) (getattr(self.task, method)())
+                        t.sync()
+            else:
+                # edit current event
+                pass
+
+    def check_modified(self):
+        if self.task_clone.get_title() != self.task.get_title():
+            self.modify.append("get_title")
+        if self.task_clone.get_text() != self.task.get_text():
+            self.modify.append("get_text")
+        if self.task_clone.get_start_date() != self.task.get_start_date():
+            self.modify.append("get_start_date")
+        if self.task_clone.get_due_date() != self.task.get_due_date():
+            self.modify.append("get_due_date")
+        if self.task_clone.get_endon_date() != self.task.get_endon_date():
+            self.modify.append("get_endon_date")
+        if self.task_clone.get_recurrence_repeats() != self.task.get_recurrence_repeats():
+            self.modify.append("get_recurrence_repeats")
+        if self.task_clone.get_recurrence_frequency() != self.task.get_recurrence_frequency():
+            self.modify.append("get_recurrence_frequency")
+        if self.task_clone.get_recurrence_onthe() != self.task.get_recurrence_onthe():
+            self.modify.append("get_recurrence_onthe")
+        if self.task_clone.get_recurrence_onday() != self.task.get_recurrence_onday():
+            self.modify.append("get_recurrence_onday")
+        if self.task_clone.get_recurrence_endson() != self.task.get_recurrence_endson():
+            self.modify.append("get_recurrence_endson")
+        if self.task_clone.endson != self.task.endson:
+            self.modify.append("endson")
+        if self.task_clone.get_recurrence_days() != self.task.get_recurrence_days():
+            self.modify.append("get_recurrence_days")
+
     def quit(self, widget, data=None):
         if self.task.recurringtask == 'True':
             if not self.thisisnew:
-                print(self.task_clone.frequency)
                 self.edit_instances()
             if self.duedate_widget.get_text() == "":
                 notify_dialog = NotifyCloseUI()
