@@ -787,8 +787,6 @@ class TaskEditor(object):
             self.builder.get_object("occurrence_label").show()
             self.task.endson = self.builder.get_object(
             "occurrence_label").get_text()
-            self.task.occurrences = self.builder.get_object(
-                "endafter_spinbutton").get_value_as_int()
         elif index == 1:
             self.builder.get_object("box11").show()
             self.builder.get_object("endafter_spinbutton").hide()
@@ -973,13 +971,13 @@ class TaskEditor(object):
                 task_list.sort(key=lambda t: t.get_due_date())
                 for t in task_list:
                     for method in self.modify:
-                        if method == "endson":
+                        if method.__contains__("endson"):
                             t.endson = self.task.endson
-                            getattr(t, method.replace("get", "set")) (t.endson, etattr(self.task, method)())
+                            getattr(t, method.replace("get", "set")) (t.endson, getattr(self.task, method)())
                         else:
                             getattr(t, method.replace("get", "set")) (getattr(self.task, method)())
                         t.sync()
-                self.task.validate_task_after_editing()
+                self.task.init_validate()
             else:
                 # edit current event
                 pass
@@ -1005,8 +1003,6 @@ class TaskEditor(object):
             self.modify.append("get_recurrence_onday")
         if self.task_clone.get_recurrence_endson() != self.task.get_recurrence_endson():
             self.modify.append("get_recurrence_endson")
-        if self.task_clone.endson != self.task.endson:
-            self.modify.append("endson")
         if self.task_clone.get_recurrence_days() != self.task.get_recurrence_days():
             self.modify.append("get_recurrence_days")
 

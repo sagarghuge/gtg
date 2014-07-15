@@ -68,7 +68,7 @@ class Task(TreeNode):
         self.frequency = None
         self.days = None
         self.endson = None
-        self.occurrences = None
+        self.occurrences = 0
         self.onthe = None
         self.onday = None
         self.rid = None
@@ -293,10 +293,12 @@ class Task(TreeNode):
         now = datetime.now()
         return Date.parse(now.strftime("%Y-%m-%d"))
 
-    def validate_task_after_editing(self):
+    def init_validate(self):
+        current_date = self.get_current_date()
         rtid = self.req.get_all_recurring_instances(self.get_id())
         due_date_list = list()
         task_list = list()
+        del_task = list()
         for tid in rtid:
             task = self.req.get_task(tid)
             if task.get_due_date() >= self.get_current_date():
@@ -304,10 +306,8 @@ class Task(TreeNode):
                 due_date_list.append(task.get_due_date())
         
         task_list.sort(key=lambda t: t.get_due_date())
+        occ_task = list(task_list)
         due_date_list.sort()
-        no_instance = False
-        del_task = list()
-        due_date = task_list[0].calculate_new_due_date()
         current_index = 0
         for task in task_list:
             due_date = task.calculate_new_due_date()
@@ -320,9 +320,23 @@ class Task(TreeNode):
                 current_index = index
             else:
                 if task.get_due_date().__le__(self.get_current_date()):
-                    task.activate_create_instance(touched=True)
-        for task in del_task:
-            self.req.delete_task(task.get_id())
+                    if not self.check_recurring_instance_exist():
+                        if task != task_list[-1]:
+                            occ_task.append(task.activate_create_instance(touched=True))
+        if self.endson == "never":  # Never
+            for task in del_task:
+                self.req.delete_task(task.get_id())
+        elif self.endson == "date":
+            pass
+        elif self.endson == "occurrence" or self.endson == "occurrences":
+            # get occurrences count by calculating task in task_list
+            # if task_list != occurrence then create instances
+            # else skip the task upto occurrence which are existed and add
+            # other in del_task list.
+            if len(occ_task) > int(self.occurrences):
+                for task in occ_task[int(self.occurrences):]:
+                    self.req.delete_task(task.get_id())
+                self.sync()
 
     def check_recurring_instance_exist(self):
         due_date_list = list()
@@ -331,6 +345,7 @@ class Task(TreeNode):
             task = self.req.get_task(tid)
             due_date_list.append(task.get_due_date())
         next_due_date = self.calculate_new_due_date()
+        print(next_due_date)
         if due_date_list.__contains__(next_due_date):
             return True
         return False
@@ -358,6 +373,9 @@ class Task(TreeNode):
                 done_occurrences = self.req.get_all_recurring_instances(self.tid)
                 if len(done_occurrences) < int(self.occurrences):
                     return self.activate_create_instance(touched=touched)
+                elif len(done_occurrences) > int(self.occurrences):
+                    # this will be the case when task gets edited
+                    pass
                 else:
                     self.set_status(self.STA_DONE)
 
