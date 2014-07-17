@@ -298,22 +298,8 @@ class Task(TreeNode):
         del_list = []
         find_list = []
         for tid in rtid:
-            present = False
-            task = self.req.get_task(tid)
-            print(task.get_due_date())
-            temp = task.calculate_new_due_date()
-            for tid in rtid:
-                t = self.req.get_task(tid)
-                if temp.__eq__(t.get_due_date()):
-                    present = True
-                    find_list.append(tid)
-                    break
-                else:
-                    if not del_list.__contains__(tid):
-                        del_list.append(tid)
-            if not present:
-                task = task.create_recurring_instance(False)
-    
+            print(self.req.get_task(tid).get_due_date())
+ 
     def validate_task(self, status=None, touched=False):
         current_date = self.get_current_date()
         if self.endson == "never":  # Never
@@ -333,7 +319,7 @@ class Task(TreeNode):
         elif self.endson == "occurrence" or self.endson == "occurrences":
             # Send DONE status after the given occurrence
             # get count of task having same rid
-            done_occurrences = self.req.get_rid_count(self.tid)
+            done_occurrences = self.req.get_all_recurring_instances(self.tid)
             if len(done_occurrences) < int(self.occurrences):
                 return self.activate_create_instance(touched=touched)
             else:
