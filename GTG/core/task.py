@@ -69,6 +69,7 @@ class Task(TreeNode):
         self.days = None
         self.endson = None
         self.occurrences = 0
+        self.modify_task = None
         self.onthe = None
         self.onday = None
         self.rid = ""
@@ -177,6 +178,13 @@ class Task(TreeNode):
 
     def set_recurrence_attribute(self, attribute):
         self.recurringtask = attribute
+
+    def set_modify_task(self, val):
+        self.modify_task = val
+
+    def get_modify_task(self):
+        if self.modify_task is not None:
+            return self.modify_task
 
     def set_uuid(self, value):
         self.uuid = str(value)
@@ -304,6 +312,8 @@ class Task(TreeNode):
         elif self.endson == "occurrence" or self.endson == "occurrences":
             # Send DONE status after the given occurrence
             # get count of task having same rid
+            # if task modified then we need to count the occurrences according
+            # to it.for that we have modify_task flag.
             done_occurrences = self.req.get_all_recurring_instances(self.tid)
             if len(done_occurrences) < int(self.occurrences):
                 return self.activate_create_instance()

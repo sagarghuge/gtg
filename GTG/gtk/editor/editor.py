@@ -65,7 +65,6 @@ class TaskEditor(object):
         self.initial = False
         self.clipboard = clipboard
         self.edit_event = True
-        self.modify = list()
         self.task_clone = None
         self.builder = Gtk.Builder()
         self.builder.add_from_file(GnomeConfig.EDITOR_UI_FILE)
@@ -954,37 +953,42 @@ class TaskEditor(object):
                 self.task.sync()
 
     def edit_instances(self):
-        self.check_modified()
-        if any(self.modify):
+        modify_list = self.check_modified()
+        if any(modify_list):
+            self.task.set_modify_task("True")
             if self.edit_event:
                 self.req.delete_task(self.task_clone.get_id())
             else:
                 # edit current event
                 pass
-
+        else:
+            self.req.delete_task(self.task_clone.get_id())
+          
     def check_modified(self):
+        modify_list = list()
         if self.task_clone.get_title() != self.task.get_title():
-            self.modify.append("get_title")
+            modify_list.append("get_title")
         if self.task_clone.get_text() != self.task.get_text():
-            self.modify.append("get_text")
+            modify_list.append("get_text")
         if self.task_clone.get_start_date() != self.task.get_start_date():
-            self.modify.append("get_start_date")
+            modify_list.append("get_start_date")
         if self.task_clone.get_due_date() != self.task.get_due_date():
-            self.modify.append("get_due_date")
+            modify_list.append("get_due_date")
         if self.task_clone.get_endon_date() != self.task.get_endon_date():
-            self.modify.append("get_endon_date")
+            modify_list.append("get_endon_date")
         if self.task_clone.get_recurrence_repeats() != self.task.get_recurrence_repeats():
-            self.modify.append("get_recurrence_repeats")
+            modify_list.append("get_recurrence_repeats")
         if self.task_clone.get_recurrence_frequency() != self.task.get_recurrence_frequency():
-            self.modify.append("get_recurrence_frequency")
+            modify_list.append("get_recurrence_frequency")
         if self.task_clone.get_recurrence_onthe() != self.task.get_recurrence_onthe():
-            self.modify.append("get_recurrence_onthe")
+            modify_list.append("get_recurrence_onthe")
         if self.task_clone.get_recurrence_onday() != self.task.get_recurrence_onday():
-            self.modify.append("get_recurrence_onday")
+            modify_list.append("get_recurrence_onday")
         if self.task_clone.get_recurrence_endson() != self.task.get_recurrence_endson():
-            self.modify.append("get_recurrence_endson")
+            modify_list.append("get_recurrence_endson")
         if self.task_clone.get_recurrence_days() != self.task.get_recurrence_days():
-            self.modify.append("get_recurrence_days")
+            modify_list.append("get_recurrence_days")
+        return modify_list
 
     def quit(self, widget, data=None):
         if self.task.recurringtask == 'True':
