@@ -299,8 +299,9 @@ class Task(TreeNode):
         task_list = list()
         for tid in rtid:
             task = self.req.get_task(tid)
-            task_list.append(task)
-            due_date_list.append(task.get_due_date())
+            if task.get_due_date() >= self.get_current_date():
+                task_list.append(task)
+                due_date_list.append(task.get_due_date())
         
         task_list.sort(key=lambda t: t.get_due_date())
         due_date_list.sort()
@@ -323,30 +324,42 @@ class Task(TreeNode):
         for task in del_task:
             self.req.delete_task(task.get_id())
 
+    def check_recurring_instance_exist(self):
+        due_date_list = list()
+        rtid = self.req.get_all_recurring_instances(self.get_id())
+        for tid in rtid:
+            task = self.req.get_task(tid)
+            due_date_list.append(task.get_due_date())
+        next_due_date = self.calculate_new_due_date()
+        if due_date_list.__contains__(next_due_date):
+            return True
+        return False
+
     def validate_task(self, status=None, touched=False):
-        current_date = self.get_current_date()
-        if self.endson == "never":  # Never
-            # Don't set DONE status
-            if self.due_date.__le__(current_date):
-                return self.activate_create_instance(touched=touched)
-            elif status == self.STA_DONE:
-                return self.activate_create_instance(touched=touched)
-        elif self.endson == "date":  # On
-            # Send DONE status on the given date
-            if self.get_endon_date().__eq__(current_date):
-                self.set_status(self.STA_DONE)
-            elif self.due_date.__lt__(current_date):
-                return self.activate_create_instance(touched=touched)
-            elif self.due_date.__lt__(self.endon_date):
-                return self.activate_create_instance(touched=touched)
-        elif self.endson == "occurrence" or self.endson == "occurrences":
-            # Send DONE status after the given occurrence
-            # get count of task having same rid
-            done_occurrences = self.req.get_all_recurring_instances(self.tid)
-            if len(done_occurrences) < int(self.occurrences):
-                return self.activate_create_instance(touched=touched)
-            else:
-                self.set_status(self.STA_DONE)
+        if not self.check_recurring_instance_exist():
+            current_date = self.get_current_date()
+            if self.endson == "never":  # Never
+                # Don't set DONE status
+                if self.due_date.__le__(current_date):
+                    return self.activate_create_instance(touched=touched)
+                elif status == self.STA_DONE:
+                    return self.activate_create_instance(touched=touched)
+            elif self.endson == "date":  # On
+                # Send DONE status on the given date
+                if self.get_endon_date().__eq__(current_date):
+                    self.set_status(self.STA_DONE)
+                elif self.due_date.__lt__(current_date):
+                    return self.activate_create_instance(touched=touched)
+                elif self.due_date.__lt__(self.endon_date):
+                    return self.activate_create_instance(touched=touched)
+            elif self.endson == "occurrence" or self.endson == "occurrences":
+                # Send DONE status after the given occurrence
+                # get count of task having same rid
+                done_occurrences = self.req.get_all_recurring_instances(self.tid)
+                if len(done_occurrences) < int(self.occurrences):
+                    return self.activate_create_instance(touched=touched)
+                else:
+                    self.set_status(self.STA_DONE)
 
     def add_months(self, sourcedate, months):
         month = sourcedate.month - 1 + months
@@ -479,7 +492,7 @@ class Task(TreeNode):
     def do_prior_status_setting(self, status):
         if status in [self.STA_DONE, self.STA_DISMISSED]:
             if self.recurringtask == "True":
-                if self.get_days_left() <=0:
+                if self.get_days_left() < 0:
                     self.set_status(self.STA_DONE)
                 else:
                     self.validate_task(status)

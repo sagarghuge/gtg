@@ -228,7 +228,8 @@ class TaskEditor(object):
         self.init_recurring()
 
         if self.task.get_recurrence_attribute() == "True":
-            if not self.thisisnew:
+            if not self.thisisnew and \
+            self.task.get_due_date() >= self.task.get_current_date():
                 self.builder.get_object("box16").show()
                 self.builder.get_object("all_instances").set_active(True)
                 self.create_task_clone()
@@ -961,16 +962,23 @@ class TaskEditor(object):
             self.req.delete_task(self.task_clone.get_id())
         if any(self.modify):
             if self.edit_event:
-                for task_id in self.req.get_all_recurring_instances(self.task.get_id()):
-                    t = self.req.get_task(task_id)
+                # Handle case when user mark task as done. and again mark as undone.
+                # and change the recurring details.
+                rtid = self.req.get_all_recurring_instances(self.task.get_id())
+                task_list = list()
+                for tid in rtid:
+                    task = self.req.get_task(tid)
+                    if task.get_due_date() >= self.task.get_current_date():
+                        task_list.append(task)
+                task_list.sort(key=lambda t: t.get_due_date())
+                for t in task_list:
                     for method in self.modify:
                         if method == "endson":
                             t.endson = self.task.endson
                             getattr(t, method.replace("get", "set")) (t.endson, etattr(self.task, method)())
                         else:
-                            getattr(t, method.replace("get", "set")) (t.endson, getattr(self.task, method)())
+                            getattr(t, method.replace("get", "set")) (getattr(self.task, method)())
                         t.sync()
-                print("in edit instances ")
                 self.task.validate_task_after_editing()
             else:
                 # edit current event
@@ -1004,7 +1012,10 @@ class TaskEditor(object):
 
     def quit(self, widget, data=None):
         if self.task.recurringtask == 'True':
-            if not self.thisisnew:
+            if not self.thisisnew and \
+            self.task.get_due_date() >= self.task.get_current_date():
+                if self.task_clone is None:
+                    self.create_task_clone()
                 self.edit_instances()
             if self.duedate_widget.get_text() == "":
                 notify_dialog = NotifyCloseUI()
