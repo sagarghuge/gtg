@@ -849,9 +849,9 @@ class TaskEditor(object):
 
     def repeattask_toggled(self, widget):
         if widget.get_active():
-            self.task.recurringtask = 'True'
-            if self.thisisnew:
+            if self.thisisnew and self.task.recurringtask is None:
                 self.task.rid = str(uuid.uuid4())
+            self.task.recurringtask = 'True'
             self.builder.get_object("repeattaskbox").show()
             self.builder.get_object("end_combobox").set_row_span_column(0)
             self.builder.get_object("box6").show()
@@ -949,35 +949,15 @@ class TaskEditor(object):
                     i.set_to_keep()
         self.vmanager.close_task(tid)
         if self.task.recurringtask == 'True':
-            if self.task.get_days_left() < 0 and self.task.touched is None:
-                self.task.set_touched("True")
-                self.task.check_overdue_tasks(True)
+            if self.task.get_days_left() < 0:
+                self.task.check_overdue_tasks()
                 self.task.sync()
 
     def edit_instances(self):
         self.check_modified()
-        if self.edit_event:
-            self.req.delete_task(self.task_clone.get_id())
         if any(self.modify):
             if self.edit_event:
-                # Handle case when user mark task as done. and again mark as undone.
-                # and change the recurring details.
-                rtid = self.req.get_all_recurring_instances(self.task.get_id())
-                task_list = list()
-                for tid in rtid:
-                    task = self.req.get_task(tid)
-                    if task.get_due_date() >= self.task.get_current_date():
-                        task_list.append(task)
-                task_list.sort(key=lambda t: t.get_due_date())
-                for t in task_list:
-                    for method in self.modify:
-                        if method.__contains__("endson"):
-                            t.endson = self.task.endson
-                            getattr(t, method.replace("get", "set")) (t.endson, getattr(self.task, method)())
-                        else:
-                            getattr(t, method.replace("get", "set")) (getattr(self.task, method)())
-                        t.sync()
-                self.task.init_validate()
+                self.req.delete_task(self.task_clone.get_id())
             else:
                 # edit current event
                 pass
@@ -1008,8 +988,7 @@ class TaskEditor(object):
 
     def quit(self, widget, data=None):
         if self.task.recurringtask == 'True':
-            if not self.thisisnew and \
-            self.task.get_due_date() >= self.task.get_current_date():
+            if not self.thisisnew:
                 if self.task_clone is None:
                     self.create_task_clone()
                 self.edit_instances()
