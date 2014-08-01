@@ -848,7 +848,7 @@ class TaskEditor(object):
 
     def repeattask_toggled(self, widget):
         if widget.get_active():
-            if self.thisisnew and self.task.recurringtask is None:
+            if self.task.recurringtask is None:
                 self.task.rid = str(uuid.uuid4())
             self.task.recurringtask = 'True'
             self.builder.get_object("repeattaskbox").show()
@@ -947,10 +947,11 @@ class TaskEditor(object):
                 if i:
                     i.set_to_keep()
         self.vmanager.close_task(tid)
-        if self.task.recurringtask == 'True':
-            if self.task.get_days_left() < 0:
-                self.task.check_overdue_tasks()
-                self.task.sync()
+        if not self.task.has_parent():
+            if self.task.recurringtask == 'True':
+                if self.task.get_days_left() < 0:
+                    self.task.check_overdue_tasks()
+                    self.task.sync()
 
     def edit_instances(self):
         modify_list = self.check_modified()

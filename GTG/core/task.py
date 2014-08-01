@@ -452,6 +452,7 @@ class Task(TreeNode):
 
     def reset_to_normal_task(self):
         self.recurringtask = None
+        self.sync()
 
     def do_prior_status_setting(self, status):
         if status in [self.STA_DONE, self.STA_DISMISSED]:
