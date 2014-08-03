@@ -51,6 +51,8 @@ def task_from_xml(task, xmlnode):
     task.set_title(read_node(xmlnode, "title"))
     task.set_rid(xmlnode.getAttribute("rid"))
     task.set_modify_task(xmlnode.getAttribute("modified"))
+    if task.endson == "occurrence" or task.endson == "occurrences":
+        t_xml.set_left_occurrences(xmlnode.getAttribute("left_occurrences"))
     if xmlnode.getAttribute("recur") != "":
         task.set_recurrence_attribute(xmlnode.getAttribute("recur"))
         for node in xmlnode.childNodes:
@@ -147,6 +149,8 @@ def task_to_xml(doc, task):
     cleanxml.addTextNode(doc, t_xml, "title", task.get_title())
     t_xml.setAttribute("rid", task.get_rid())
     t_xml.setAttribute("modified", task.get_modify_task())
+    if task.endson == "occurrence" or task.endson == "occurrences":
+        t_xml.setAttribute("left_occurrences", task.get_left_occurrences())
     if recure_val == "True":
         t_xml.setAttribute("recur", task.get_recurrence_attribute())
         whence = task.get_recurrence_repeats()

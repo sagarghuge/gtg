@@ -69,6 +69,7 @@ class Task(TreeNode):
         self.days = None
         self.endson = None
         self.occurrences = 0
+        self.left_occurrences = -1
         self.modify_task = None
         self.onthe = None
         self.onday = None
@@ -111,6 +112,12 @@ class Task(TreeNode):
 
     def get_rid(self):
         return str(self.rid)
+
+    def get_left_occurrences(self):
+        return str(self.left_occurrences)
+
+    def set_left_occurrences(self, occurrences):
+        self.left_occurrences = occurrences
 
     def get_recurrence_attribute(self):
         #TODO Will get the attribute recurrence
@@ -314,14 +321,18 @@ class Task(TreeNode):
             # get count of task having same rid
             # if task modified then we need to count the occurrences according
             # to it.for that we have modify_task flag.
-            done_occurrences = self.req.get_all_recurring_instances(self.tid)
-            if len(done_occurrences) < int(self.occurrences):
-                return self.activate_create_instance()
-            elif len(done_occurrences) > int(self.occurrences):
+            #done_occurrences = self.req.get_all_recurring_instances(self.tid)
+            #if len(done_occurrences) < int(self.occurrences):
+            #    return self.activate_create_instance()
+            #elif len(done_occurrences) > int(self.occurrences):
                 # this will be the case when task gets edited
-                pass
-            else:
+            #    pass
+            #else:
+            #    self.set_status(self.STA_DONE)
+            if int(self.left_occurrences) == 0:
                 self.set_status(self.STA_DONE)
+            else:
+                return self.activate_create_instance()     
 
     def add_months(self, sourcedate, months):
         month = sourcedate.month - 1 + months
@@ -447,6 +458,7 @@ class Task(TreeNode):
         task.set_recurrence_onday(self.get_recurrence_onday())
         task.set_recurrence_endson(self.endson, self.get_recurrence_endson())
         task.set_recurrence_days(self.get_recurrence_days())
+        task.set_left_occurrences((int(self.get_left_occurrences()) - 1))
         self.reset_to_normal_task()
         return task
 

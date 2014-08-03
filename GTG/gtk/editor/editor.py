@@ -808,6 +808,7 @@ class TaskEditor(object):
         label = self.builder.get_object("occurrence_label")
         spinbutton = self.builder.get_object("endafter_spinbutton")
         self.task.occurrences = spinbutton.get_value_as_int()
+        self.task.left_occurrences = self.task.occurrences - 1
         self.set_label_value(label, spinbutton)
         self.task.endson = self.builder.get_object(
             "occurrence_label").get_text()
