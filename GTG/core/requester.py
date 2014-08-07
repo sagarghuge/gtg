@@ -153,23 +153,67 @@ class Requester(GObject.GObject):
 
         return None
 
+    def clone_recurring_task(self, new_task, old_task):
+        """ copy all task attribute
+        @param old_task: task object from which copy all attribute
+        @param new_task: task object to which copy all attribute
+        @return: task object
+        """
+        new_task.set_is_recurring(old_task.get_is_recurring())
+        new_task.set_title(old_task.get_title())
+        new_task.set_rid(old_task.get_rid())
+
+        # add tags
+        for tag in old_task.get_tags():
+            new_task.add_tag(tag.get_name())
+        if old_task.get_text() != "":
+            new_task.set_text(old_task.get_text())
+
+        # copy date related attribute
+        new_task.set_start_date(old_task.get_start_date())
+        new_task.set_due_date(old_task.get_due_date())
+        new_task.set_endon_date(old_task.get_endon_date())
+        new_task.set_modified(old_task.get_modified())
+
+        # copy all recurring attribute
+        new_task.set_recurrence_repeats(old_task.get_recurrence_repeats())
+        new_task.set_recurrence_frequency(old_task.get_recurrence_frequency())
+        new_task.set_recurrence_onthe(old_task.get_recurrence_onthe())
+        new_task.set_recurrence_onday(old_task.get_recurrence_onday())
+        new_task.set_recurrence_endson(old_task.endson, old_task.get_recurrence_endson())
+        new_task.set_recurrence_days(old_task.get_recurrence_days())
+
+        if old_task.endson == old_task.REC_OCCURRENCE \
+        or old_task.endson == old_task.REC_OCCURRENCES:
+            new_task.set_left_occurrences(
+            (int(old_task.get_left_occurrences()) - 1))
+
+        return new_task
+
     def validate_recurring_tasks(self):
+        """
+        Validate the recurring task
+        """
         tasks = self.get_tasks_tree('active', False).get_all_nodes()
         tasktree = self.get_main_view()
-        #Skip overdue tasks
+        # Skip overdue tasks
         for task_id in tasks:
             task = tasktree.get_node(task_id)
             if task.is_recurring == 'True':
                 task.validate_recurring_task()
 
-    def get_all_recurring_instances(self, tid):
-        "Compare rid and return all task which are having same rid"
-        rtid = self.get_recurring_instances(tid , 'active')
-        rtid_closed = self.get_recurring_instances(tid, status='closed')
+    def get_all_rtids(self, tid):
+        """
+        @return: list of instances which have same rid (closed/active)
+        """
+        rtid = self.get_rtids(tid , 'active')
+        rtid_closed = self.get_rtids(tid, status='closed')
         return (rtid + rtid_closed)
 
-    def get_recurring_instances(self, tid, status):
-        # return list of instances of rid
+    def get_rtids(self, tid, status):
+        """
+        @return: list of instances which have same rid
+        """
         rtid = []
         tasks = self.get_tasks_tree(status, False).get_all_nodes()
         tasktree = self.get_main_view()

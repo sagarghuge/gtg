@@ -76,8 +76,7 @@ class TaskEditor(object):
         self.inserttag_button = self.builder.get_object("inserttag")
         self.inserttag_button.set_tooltip_text(GnomeConfig.TAG_TOOLTIP)
         self.open_parents_button = self.builder.get_object("open_parents")
-        self.repeattask_button = self.builder.get_object(
-            "repeattask_toggletoolbutton1")
+        self.repeattask_button = self.builder.get_object("toggle_repeattask")
         self.repeattask_button.set_tooltip_text(
             GnomeConfig.REPEAT_TASK_TOOLTIP)
 
@@ -113,7 +112,7 @@ class TaskEditor(object):
                 w, e, GTGCalendar.DATE_KIND_ENDON),
             "on_insert_subtask_clicked": self.insert_subtask,
             "on_inserttag_clicked": self.inserttag_clicked,
-            "on_repeattask_toggletoolbutton1_toggled": self.repeattask_toggled,
+            "on_repeattask_toggled": self.repeattask_toggled,
             "on_repeats_combobox_value_changed":
             self.repeats_combobox_value_changed,
             "on_end_combobox_value_changed": self.end_combobox_value_changed,
@@ -225,41 +224,24 @@ class TaskEditor(object):
         #Set initial values of recurring task
         self.init_recurring()
 
+        # check if task is recurring and opened for editing then
+        # as we follow 'past can not be changed' rule, we only
+        # allow user to affect the current or future instances
+        # which task has the recurring rule, By default we set
+        # all instances option
         if self.task.get_is_recurring() == 'True':
             if not self.thisisnew and \
             self.task.get_due_date() >= self.task.get_current_date():
                 self.builder.get_object("box16").show()
                 self.builder.get_object("all_instances").set_active(True)
-                self.create_task_clone()
+                self.clone_recurring_task()
             self.repeattask_button.set_active(True)
             self.get_recurrence_details()
-            #self.update_summary()
 
-    def create_task_clone(self):
+    def clone_recurring_task(self):
         self.task_clone = self.req.new_task()
+        self.req.clone_recurring_task(self.task, self.task_clone)
         self.task_clone.set_status(self.task_clone.STA_HIDDEN)
-        self.task_clone.set_is_recurring(self.task.get_is_recurring())
-        self.task_clone.set_title(self.task.get_title())
-        self.task_clone.set_rid(self.task.get_rid())
-        #add tags
-        for t in self.task.get_tags():
-            self.task_clone.add_tag(t.get_name())
-        #Before setting content set all attribute values.
-        if self.task.get_text() != "":
-            self.task_clone.set_text(self.task.get_text())
-        self.task_clone.set_start_date(self.task.get_start_date())
-        #TODO calculate new due date depending on the recurrence details.
-        self.task_clone.set_due_date(self.task.get_due_date())
-        self.task_clone.set_endon_date(self.task.get_endon_date())
-        self.task_clone.set_modified(self.task.get_modified())
- 
-        #fire all recrrence methods
-        self.task_clone.set_recurrence_repeats(self.task.get_recurrence_repeats())
-        self.task_clone.set_recurrence_frequency(self.task.get_recurrence_frequency())
-        self.task_clone.set_recurrence_onthe(self.task.get_recurrence_onthe())
-        self.task_clone.set_recurrence_onday(self.task.get_recurrence_onday())
-        self.task_clone.set_recurrence_endson(self.task.endson, self.task.get_recurrence_endson())
-        self.task_clone.set_recurrence_days(self.task.get_recurrence_days())
 
     def init_recurring(self):
         if self.task.is_recurring != 'True':
@@ -998,7 +980,7 @@ class TaskEditor(object):
         if self.task.is_recurring == 'True':
             if not self.thisisnew:
                 if self.task_clone is None:
-                    self.create_task_clone()
+                    self.clone_recurring_task()
                 self.edit_instances()
             if self.duedate_widget.get_text() == "":
                 notify_dialog = NotifyCloseUI()

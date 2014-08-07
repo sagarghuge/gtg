@@ -436,37 +436,18 @@ class Task(TreeNode):
                     self.get_due_date(), 12 * int(self.recur_frequency))
 
     #TODO refactor this method and create copy and create task new method
-    def create_recurring_instance(
+    def clone_recurring_task(
         self, is_subtask=False, parent=None):
         if is_subtask:
             task = parent.new_subtask()
         else:
             task = self.req.new_task()
-        task.set_is_recurring(self.get_is_recurring())
-        task.set_title(self.get_title())
-        task.set_rid(self.get_rid())
-        #add tags
-        for t in self.get_tags():
-            task.add_tag(t.get_name())
-        #Before setting content set all attribute values.
-        task.set_text(self.get_text())
-        task.set_start_date(self.get_start_date())
-        #TODO calculate new due date depending on the recurrence details.
+
+        self.req.clone_recurring_task(task, self)
         new_duedate = self.calculate_new_due_date()
         task.set_due_date(new_duedate)
-        task.set_endon_date(self.get_endon_date())
-
-        #fire all recrrence methods
-        task.set_recurrence_repeats(self.get_recurrence_repeats())
-        task.set_recurrence_frequency(self.get_recurrence_frequency())
-        task.set_recurrence_onthe(self.get_recurrence_onthe())
-        task.set_recurrence_onday(self.get_recurrence_onday())
-        task.set_recurrence_endson(self.endson, self.get_recurrence_endson())
-        task.set_recurrence_days(self.get_recurrence_days())
-        if self.endson == self.REC_OCCURRENCE \
-        or self.endson == self.REC_OCCURRENCES:
-            task.set_left_occurrences((int(self.get_left_occurrences()) - 1))
         self.reset_to_normal_task()
+
         return task
 
     def reset_to_normal_task(self):
@@ -483,10 +464,10 @@ class Task(TreeNode):
 
     def activate_create_instance(self, rec=False):
         if not rec:
-            self.parent = self.create_recurring_instance()
+            self.parent = self.clone_recurring_task()
         for sub_task in self.get_subtasks():
             if sub_task.is_recurring == 'True':
-                sub_task.parent = sub_task.create_recurring_instance(
+                sub_task.parent = sub_task.clone_recurring_task(
                     True, self.parent)
                 if sub_task.has_child():
                     sub_task.activate_create_instance(True)

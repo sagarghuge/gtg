@@ -64,7 +64,7 @@ class DeletionUI():
     def on_multiple_delete_confirm(self, widget):
         for tid in self.tids_todelete:
             if self.req.has_task(tid):
-                tasks = self.req.get_all_recurring_instances(tid)
+                tasks = self.req.get_all_rtids(tid)
                 if tasks is not None:
                     for tid in tasks:
                         self.req.delete_task(tid, recursive=True)
