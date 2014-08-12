@@ -239,7 +239,7 @@ class TaskEditor(object):
 
     def clone_recurring_task(self):
         self.task_clone = self.req.new_task()
-        self.req.clone_recurring_task(self.task, self.task_clone)
+        self.req.clone_recurring_task(self.task_clone, self.task)
         self.task_clone.set_status(self.task_clone.STA_HIDDEN)
 
     def init_recurring_task_attributes(self):
