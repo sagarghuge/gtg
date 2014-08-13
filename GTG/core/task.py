@@ -69,7 +69,7 @@ class Task(TreeNode):
         self.days = None
         self.endson = None
         self.occurrences = 0
-        self.left_occurrences = -1
+        self.left_occurrences = -1 
         self.modify_task = None
         self.onthe = None
         self.onday = None
@@ -317,22 +317,12 @@ class Task(TreeNode):
             elif self.due_date.__lt__(self.endon_date):
                 return self.activate_create_instance()
         elif self.endson == "occurrence" or self.endson == "occurrences":
-            # Send DONE status after the given occurrence
-            # get count of task having same rid
-            # if task modified then we need to count the occurrences according
-            # to it.for that we have modify_task flag.
-            #done_occurrences = self.req.get_all_recurring_instances(self.tid)
-            #if len(done_occurrences) < int(self.occurrences):
-            #    return self.activate_create_instance()
-            #elif len(done_occurrences) > int(self.occurrences):
-                # this will be the case when task gets edited
-            #    pass
-            #else:
-            #    self.set_status(self.STA_DONE)
             if int(self.left_occurrences) == 0:
+                self.reset_to_normal_task()
                 self.set_status(self.STA_DONE)
+                return -1
             else:
-                return self.activate_create_instance()     
+                return activate_create_instance()
 
     def add_months(self, sourcedate, months):
         month = sourcedate.month - 1 + months
@@ -489,11 +479,11 @@ class Task(TreeNode):
         current_date = self.get_current_date()
         while True:
             if self.parent is not None:
-                if self.parent.get_due_date().__ge__(current_date):
-                    # Reset the touch for last instance so that next
-                    # it will be considered for recurring
+                if self.parent.get_due_date().__ge__(current_date): 
                     break
                 self.parent = self.parent.validate_task()
+                if self.parent == -1:
+                    break
             else:
                 self.parent = self.validate_task()
 
