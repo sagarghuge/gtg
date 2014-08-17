@@ -961,8 +961,8 @@ class TaskEditor(object):
             if self.edit_event:
                 self.req.delete_task(self.task_clone.get_id())
             else:
-                # edit current event
-                pass
+                self.task.reset_to_normal_task()
+                self.task_clone.set_status(self.task_clone.STA_ACTIVE)
         else:
             self.req.delete_task(self.task_clone.get_id())
           
@@ -976,7 +976,7 @@ class TaskEditor(object):
             modify_list.append("get_start_date")
         if self.task_clone.get_due_date() != self.task.get_due_date():
             modify_list.append("get_due_date")
-        if self.task_clone.get_endon_date() != self.task.get_endon_date():
+        if self.task_clone.get_endon_date().__ne__(self.task.get_endon_date()):
             modify_list.append("get_endon_date")
         if self.task_clone.get_recurrence_repeats() != self.task.get_recurrence_repeats():
             modify_list.append("get_recurrence_repeats")
