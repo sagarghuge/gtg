@@ -54,13 +54,13 @@ def task_from_xml(task, xmlnode):
     if task.rid is not None:
         task.set_left_occurrences(xmlnode.getAttribute("left_occurrences"))
     if xmlnode.getAttribute("recur") != "":
-        task.set_recurrence_attribute(xmlnode.getAttribute("recur"))
+        task.set_is_recurring(xmlnode.getAttribute("recur"))
         for node in xmlnode.childNodes:
             if node.tagName == "recurring":
                 repeats = node.childNodes[0].tagName
                 task.set_recurrence_repeats(repeats)
-                frequency = read_node(xmlnode, "frequency")
-                task.set_recurrence_frequency(frequency)
+                recur_frequency = read_node(xmlnode, "frequency")
+                task.set_recurrence_frequency(recur_frequency)
                 if repeats == "Weekly":
                     days = read_node(xmlnode, "day")
                     task.set_recurrence_days(days)
@@ -140,7 +140,7 @@ def task_to_xml(doc, task):
     t_xml.setAttribute("id", task.get_id())
     t_xml.setAttribute("status", task.get_status())
     t_xml.setAttribute("uuid", task.get_uuid())
-    recure_val = task.get_recurrence_attribute()
+    recure_val = task.get_is_recurring()
 
     tags_str = ""
     for tag in task.get_tags_name():
@@ -149,10 +149,11 @@ def task_to_xml(doc, task):
     cleanxml.addTextNode(doc, t_xml, "title", task.get_title())
     t_xml.setAttribute("rid", task.get_rid())
     t_xml.setAttribute("modified", task.get_modify_task())
-    if task.endson == "occurrence" or task.endson == "occurrences":
+    if task.endson == task.REC_OCCURRENCE \
+    or task.endson == task.REC_OCCURRENCES:
         t_xml.setAttribute("left_occurrences", task.get_left_occurrences())
     if recure_val == "True":
-        t_xml.setAttribute("recur", task.get_recurrence_attribute())
+        t_xml.setAttribute("recur", task.get_is_recurring())
         whence = task.get_recurrence_repeats()
         recur_xml = doc.createElement("recurring")
         whence_xml = doc.createElement("%s" % (whence))
@@ -172,7 +173,7 @@ def task_to_xml(doc, task):
                 doc, repeats_xml, "on", task.get_recurrence_onthe())
             cleanxml.addTextNode(
                 doc, repeats_xml, "day", task.get_recurrence_onday())
-        if task.endson == "date":
+        if task.endson == task.REC_DATE:
             cleanxml.addTextNode(
                 doc, endson_xml, "%s" % (task.endson),
                 task.get_endon_date().xml_str())

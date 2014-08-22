@@ -60,7 +60,6 @@ class TaskEditor(object):
         self.vmanager = vmanager
         self.config = taskconfig
         self.time = None
-        self.days = None
         self.thisisnew = thisisnew
         self.initial = False
         self.clipboard = clipboard
@@ -226,7 +225,7 @@ class TaskEditor(object):
         #Set initial values of recurring task
         self.init_recurring()
 
-        if self.task.get_recurrence_attribute() == "True":
+        if self.task.get_is_recurring() == 'True':
             if not self.thisisnew and \
             self.task.get_due_date() >= self.task.get_current_date():
                 self.builder.get_object("box16").show()
@@ -239,7 +238,7 @@ class TaskEditor(object):
     def create_task_clone(self):
         self.task_clone = self.req.new_task()
         self.task_clone.set_status(self.task_clone.STA_HIDDEN)
-        self.task_clone.set_recurrence_attribute(self.task.get_recurrence_attribute())
+        self.task_clone.set_is_recurring(self.task.get_is_recurring())
         self.task_clone.set_title(self.task.get_title())
         self.task_clone.set_rid(self.task.get_rid())
         #add tags
@@ -263,16 +262,16 @@ class TaskEditor(object):
         self.task_clone.set_recurrence_days(self.task.get_recurrence_days())
 
     def init_recurring(self):
-        if self.task.recurringtask != "True":
+        if self.task.is_recurring != 'True':
             self.task.repeats = self.builder.get_object(
                 "repeats_combobox").get_active_text()
-            self.task.frequency = self.builder.get_object(
+            self.task.recur_frequency = self.builder.get_object(
                 "every_spinbutton").get_value_as_int()
             self.task.onthe = self.builder.get_object(
                 "sequence_combobox").get_active_text()
             self.task.onday = self.builder.get_object(
                 "days_combobox").get_active_text()
-            self.task.days = self.days_update()
+            self.task.recur_days = self.days_update()
             self.task.endson = self.builder.get_object(
                 "end_combobox").get_active_text().lower()
             self.task.occurrences = self.builder.get_object(
@@ -639,14 +638,14 @@ class TaskEditor(object):
         self.builder.get_object(
             "repeats_combobox").set_active(repeat_dict[self.task.repeats])
         self.builder.get_object(
-            "every_spinbutton").set_value(int(self.task.frequency))
+            "every_spinbutton").set_value(int(self.task.recur_frequency))
 
-        if self.task.endson == "date":
+        if self.task.endson == self.task.REC_DATE:
             self.builder.get_object(
                 "end_combobox").set_active(1)
             self.builder.get_object(
                 "endondate_entry").set_text(str(self.task.get_endon_date()))
-        elif self.task.endson == "never":
+        elif self.task.endson == self.task.REC_NEVER:
             self.builder.get_object(
                 "end_combobox").set_active(2)
         else:
@@ -657,19 +656,19 @@ class TaskEditor(object):
 
         if self.task.repeats == "Weekly":
             #TODO toggle check buttons
-            if self.task.days.__contains__(","):
-                days_list = self.task.days.split(",")
+            if self.task.recur_days.__contains__(","):
+                days_list = self.task.recur_days.split(",")
                 for item in days_list:
                     checkbutton_no = days_dict[item.strip()] + 1
                     self.builder.get_object(
                         "checkbutton"+str(checkbutton_no)).set_active(True)
             else:
-                if self.task.days == "all days":
+                if self.task.recur_days == "all days":
                     for key, val in days_dict.items():
                         self.builder.get_object(
                             "checkbutton"+str(val+1)).set_active(True)
                 else:
-                    checkbutton_no = days_dict[self.task.days] + 1
+                    checkbutton_no = days_dict[self.task.recur_days] + 1
                     self.builder.get_object(
                         "checkbutton"+str(checkbutton_no)).set_active(True)
 
@@ -766,7 +765,7 @@ class TaskEditor(object):
         return days_sum_txt
 
     def days_checkbuttons_toggled(self, widget):
-        self.task.days = self.days_update()
+        self.task.recur_days = self.days_update()
         self.update_summary()
 
     def days_combobox_value_changed(self, widget):
@@ -791,16 +790,16 @@ class TaskEditor(object):
             self.builder.get_object("endafter_spinbutton").hide()
             self.builder.get_object("endonbox").show()
             self.builder.get_object("occurrence_label").hide()
-            self.task.endson = "date"
+            self.task.endson = self.task.REC_DATE
         elif index == 2:
             self.builder.get_object("box11").hide()
-            self.task.endson = "never"
+            self.task.endson = self.task.REC_NEVER 
         self.update_summary()
 
     def every_spinbutton_value_changed(self, widget):
         label = self.builder.get_object("common_label")
         spinbutton = self.builder.get_object("every_spinbutton")
-        self.task.frequency = spinbutton.get_value_as_int()
+        self.task.recur_frequency = spinbutton.get_value_as_int()
         self.set_label_value(label, spinbutton)
         self.update_summary()
 
@@ -849,16 +848,16 @@ class TaskEditor(object):
 
     def repeattask_toggled(self, widget):
         if widget.get_active():
-            if self.task.recurringtask is None:
+            if self.task.is_recurring is None:
                 self.task.rid = str(uuid.uuid4())
-            self.task.recurringtask = 'True'
+            self.task.is_recurring = 'True'
             self.builder.get_object("repeattaskbox").show()
             self.builder.get_object("end_combobox").set_row_span_column(0)
             self.builder.get_object("box6").show()
             self.builder.get_object("box12").show()
             self.update_summary()
         else:
-            self.task.recurringtask = 'False'
+            self.task.is_recurring = 'False'
             self.task.rid = None
             self.builder.get_object("repeattaskbox").hide()
             self.builder.get_object("box6").hide()
@@ -949,7 +948,7 @@ class TaskEditor(object):
                     i.set_to_keep()
         self.vmanager.close_task(tid)
         if not self.task.has_parent():
-            if self.task.recurringtask == 'True':
+            if self.task.is_recurring == 'True':
                 if self.task.get_days_left() < 0:
                     self.task.check_overdue_tasks()
                     self.task.sync()
@@ -993,7 +992,7 @@ class TaskEditor(object):
         return modify_list
 
     def quit(self, widget, data=None):
-        if self.task.recurringtask == 'True':
+        if self.task.is_recurring == 'True':
             if not self.thisisnew:
                 if self.task_clone is None:
                     self.create_task_clone()

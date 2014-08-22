@@ -159,8 +159,8 @@ class Requester(GObject.GObject):
         #Skip overdue tasks
         for task_id in tasks:
             task = tasktree.get_node(task_id)
-            if task.recurringtask == "True":
-                task.validate_task()
+            if task.is_recurring == 'True':
+                task.validate_recurring_task()
 
     def get_all_recurring_instances(self, tid):
         "Compare rid and return all task which are having same rid"

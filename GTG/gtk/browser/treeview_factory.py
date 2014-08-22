@@ -370,7 +370,7 @@ class TreeviewFactory():
     def common_desc_for_tasks(self, tree, title_label):
         desc = {}
 
-        col_name = 'recurringtask'
+        col_name = 'is_recurring'
         col = {}
         render_tags = CellRendererIcons()
         col['renderer'] = ['icon', render_tags]

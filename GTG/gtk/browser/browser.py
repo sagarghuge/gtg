@@ -570,7 +570,7 @@ class TaskBrowser(GObject.GObject):
         for task_id in tasks:
             task = tasktree.get_node(task_id)
             if task not in subtasks and not task.has_parent():
-                if task.recurringtask == "True" and task.get_days_left() < 0:
+                if task.is_recurring == 'True' and task.get_days_left() < 0:
                     subtasks = task.get_subtasks()
                     task.check_overdue_tasks()
                     task.sync()
