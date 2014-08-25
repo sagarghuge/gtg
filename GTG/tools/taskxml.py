@@ -61,10 +61,10 @@ def task_from_xml(task, xmlnode):
                 task.set_recurrence_repeats(repeats)
                 recur_frequency = read_node(xmlnode, "frequency")
                 task.set_recurrence_frequency(recur_frequency)
-                if repeats == "Weekly":
+                if repeats == self.task.REP_WEEKLY:
                     days = read_node(xmlnode, "day")
                     task.set_recurrence_days(days)
-                elif repeats == "Monthly":
+                elif repeats == self.task.REP_MONTHLY:
                     onthe = read_node(xmlnode, "on")
                     onday = read_node(xmlnode, "day")
                     task.set_recurrence_onthe(onthe)
@@ -165,10 +165,10 @@ def task_to_xml(doc, task):
         recur_xml.appendChild(endson_xml)
         cleanxml.addTextNode(
             doc, repeats_xml, "frequency", task.get_recurrence_frequency())
-        if whence == "Weekly":
+        if whence == self.task.REP_WEEKLY:
             cleanxml.addTextNode(
                 doc, repeats_xml, "day", task.get_recurrence_days())
-        elif whence == "Monthly":
+        elif whence == self.task.REP_MONTHLY:
             cleanxml.addTextNode(
                 doc, repeats_xml, "on", task.get_recurrence_onthe())
             cleanxml.addTextNode(

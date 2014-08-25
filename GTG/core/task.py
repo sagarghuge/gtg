@@ -49,6 +49,10 @@ class Task(TreeNode):
     REC_DATE = "date"
     REC_OCCURRENCE = "occurrence"
     REC_OCCURRENCES = "occurrences"
+    REP_DAILY = "Daily"
+    REP_MONTHLY = "Monthly"
+    REP_WEEKLY = "Weekly"
+    REP_YEARLY = "Yearly"
 
     def __init__(self, ze_id, requester, newtask=False):
         TreeNode.__init__(self, ze_id)
@@ -334,30 +338,36 @@ class Task(TreeNode):
         day = min(sourcedate.day, calendar.monthrange(year, month)[1])
         return Date.parse(str(year)+str(month)+str(day))
 
-    def create_weekdayrule_tuple(self):
+    def create_weekdayrule(self):
+        """ return a tuple which contains a weekdays """
         days = ["Monday", "Tuesday", "Wednesday",
                 "Thursday", "Friday", "Saturday", "Sunday"]
-        mylist = []
+        weekdays = []
         if self.recur_days.__contains__(','):
-            tmp_lst = self.recur_days.split(',')
-            for item in tmp_lst:
-                mylist.append(days.index(item.strip()))
+            daysL = self.recur_days.split(',')
+            for day in daysL:
+                weekdays.append(days.index(day.strip()))
         else:
-            mylist.append(days.index(self.recur_days))
-        return tuple(mylist)
+            weekdays.append(days.index(self.recur_days))
+
+        return tuple(weekdays)
 
     def get_onthe_index(self):
+        """ return index according monthly repeats """
         ontheL = ["First", "Second", "Third", "Fourth", "Fifth", "Last"]
         if self.onthe == "Last":
             return -1
         else:
-            return ontheL.index(self.onthe)+1
+            return ontheL.index(self.onthe) + 1
 
     def get_monthly_due_date(self, interval):
         onthe = self.get_onthe_index()
-        ondayD = {"Monday": rrule.MO, "Tuesday": rrule.TU,
-                  "Wednesday": rrule.WE, "Thursday": rrule.TH,
-                  "Friday": rrule.FR, "Saturday": rrule.SA,
+        ondayD = {"Monday": rrule.MO,
+                  "Tuesday": rrule.TU,
+                  "Wednesday": rrule.WE,
+                  "Thursday": rrule.TH,
+                  "Friday": rrule.FR,
+                  "Saturday": rrule.SA,
                   "Sunday": rrule.SU}
         new_date = list(rrule.rrule(
             rrule.MONTHLY, interval=interval,
@@ -366,6 +376,7 @@ class Task(TreeNode):
                 )))[0]
         date = Date.parse(
             str(new_date.year)+str(new_date.month)+str(new_date.day))
+
         if date.__eq__(self.due_date):
             return list(rrule.rrule(
                 rrule.MONTHLY, interval=interval,
@@ -377,16 +388,17 @@ class Task(TreeNode):
             return new_date
 
     def calculate_new_due_date(self):
-        if self.repeats == "Daily":
+        """ calculate and return the new due date """
+        if self.repeats == self.REP_DAILY:
             if int(self.recur_frequency) == 0:
                 return self.get_due_date() + \
                     timedelta(days=1)
             else:
                 return self.get_due_date() + \
                     timedelta(days=int(self.recur_frequency))
-        elif self.repeats == "Weekly":
+        elif self.repeats == self.REP_WEEKLY:
             current_date = self.get_current_date()
-            rule_tupple = self.create_weekdayrule_tuple()
+            rule_tupple = self.create_weekdayrule()
             if int(self.recur_frequency) == 0 or int(self.recur_frequency) == 1:
                 new_date = list(rrule.rrule(
                     rrule.WEEKLY, count=1,
@@ -407,7 +419,7 @@ class Task(TreeNode):
                         self.due_date.day+1)))[0]
                 return Date.parse(
                     str(new_date.year)+str(new_date.month)+str(new_date.day))
-        elif self.repeats == "Monthly":
+        elif self.repeats == self.REP_MONTHLY:
             if int(self.recur_frequency) == 0 or int(self.recur_frequency) == 1:
                 new_date = self.get_monthly_due_date(1)
                 return Date.parse(
@@ -416,7 +428,7 @@ class Task(TreeNode):
                 new_date = self.get_monthly_due_date(int(self.recur_frequency))
                 return Date.parse(
                     str(new_date.year)+str(new_date.month)+str(new_date.day))
-        elif self.repeats == "Yearly":
+        elif self.repeats == self.REP_YEARLY:
             if int(self.recur_frequency) == 0:
                 return self.add_months(self.due_date(), 12)
             else:

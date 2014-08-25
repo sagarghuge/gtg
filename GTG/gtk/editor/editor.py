@@ -630,7 +630,10 @@ class TaskEditor(object):
         self.textview.grab_focus()
 
     def get_recurrence_details(self):
-        repeat_dict = {"Daily": 0, "Weekly": 1, "Monthly": 2, "Yearly": 3}
+        repeat_dict = {self.task.REP_DAILY: 0,
+                       self.task.REP_WEEKLY: 1,
+                       self.task.REP_MONTHLY: 2,
+                       self.task.REP_YEARLY: 3}
         days_dict = {"Sunday": 0, "Monday": 1, "Tuesday": 2, "Wednesday": 3,
                      "Thursday": 4, "Friday": 5, "Saturday": 6}
         seq_dict = {"First": 0, "Second": 1, "Third": 2,
@@ -654,7 +657,7 @@ class TaskEditor(object):
             self.builder.get_object(
                 "endafter_spinbutton").set_value(int(self.task.occurrences))
 
-        if self.task.repeats == "Weekly":
+        if self.task.repeats == self.task.REP_WEEKLY:
             #TODO toggle check buttons
             if self.task.recur_days.__contains__(","):
                 days_list = self.task.recur_days.split(",")
@@ -672,7 +675,7 @@ class TaskEditor(object):
                     self.builder.get_object(
                         "checkbutton"+str(checkbutton_no)).set_active(True)
 
-        elif self.task.repeats == "Monthly":
+        elif self.task.repeats == self.task.REP_MONTHLY:
             self.builder.get_object(
                 "days_combobox").set_active(days_dict[self.task.onday])
             self.builder.get_object(
@@ -690,9 +693,9 @@ class TaskEditor(object):
 
         sum_txt = None
         if every_val <= 1:
-            if repeat_txt == "Daily":
+            if repeat_txt == self.task.REP_DAILY:
                 sum_txt = repeat_txt
-            elif repeat_txt == "Yearly":
+            elif repeat_txt == self.task.REP_YEARLY:
                 sum_txt = "Annually on "+self.startdate_widget.get_text()
             else:
                 sum_txt = repeat_txt
@@ -701,10 +704,10 @@ class TaskEditor(object):
                 self.builder.get_object("common_label").\
                 get_text()
 
-        if repeat_txt == "Weekly":
+        if repeat_txt == self.task.REP_WEEKLY:
             txt = self.days_update()
             sum_txt += " on " + txt
-        elif repeat_txt == "Monthly":
+        elif repeat_txt == self.task.REP_MONTHLY:
             sequence_txt = self.builder.get_object(
                 "sequence_combobox").get_active_text()
             days_txt = self.builder.get_object(
