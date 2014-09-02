@@ -77,7 +77,7 @@ class Task(TreeNode):
         self.recur_days = None
         self.endson = None
         self.occurrences = 0
-        self.left_occurrences = -1 
+        self.left_occurrences = -1
         self.modify_task = None
         self.onthe = None
         self.onday = None
@@ -154,7 +154,7 @@ class Task(TreeNode):
     def get_recurrence_endson(self):
         if self.endson is not None:
             if self.endson == self.REC_OCCURRENCE \
-            or self.endson == self.REC_OCCURRENCES:
+                    or self.endson == self.REC_OCCURRENCES:
                 return str(self.occurrences)
             elif self.endson == self.REC_DATE:
                 return self.endon_date
@@ -307,6 +307,10 @@ class Task(TreeNode):
         return Date.parse(now.strftime("%Y-%m-%d"))
 
     def validate_recurring_task(self, status=None):
+        """
+        @param status: Status of task
+        Return recurring task object
+        """
         current_date = self.get_current_date()
         if self.endson == self.REC_NEVER:
             # Don't set DONE status
@@ -323,13 +327,13 @@ class Task(TreeNode):
             elif self.due_date.__lt__(self.endon_date):
                 return self.activate_create_instance()
         elif self.endson == self.REC_OCCURRENCE \
-        or self.endson == self.REC_OCCURRENCES:
+                or self.endson == self.REC_OCCURRENCES:
             if int(self.left_occurrences) == 0:
                 self.reset_to_normal_task()
                 self.set_status(self.STA_DONE)
                 return -1
             else:
-                return activate_create_instance()
+                return self.activate_create_instance()
 
     def add_months(self, sourcedate, months):
         month = sourcedate.month - 1 + months
@@ -361,6 +365,10 @@ class Task(TreeNode):
             return ontheL.index(self.onthe) + 1
 
     def get_monthly_due_date(self, interval):
+        """
+        @param interval: calulate next due date depend on interval
+        Return new due date
+        """
         onthe = self.get_onthe_index()
         ondayD = {"Monday": rrule.MO,
                   "Tuesday": rrule.TU,
@@ -390,54 +398,29 @@ class Task(TreeNode):
     def calculate_new_due_date(self):
         """ calculate and return the new due date """
         if self.repeats == self.REP_DAILY:
-            if int(self.recur_frequency) == 0:
-                return self.get_due_date() + \
-                    timedelta(days=1)
-            else:
-                return self.get_due_date() + \
-                    timedelta(days=int(self.recur_frequency))
+            return self.get_due_date() + \
+                timedelta(days=int(self.recur_frequency))
         elif self.repeats == self.REP_WEEKLY:
             current_date = self.get_current_date()
             rule_tupple = self.create_weekdayrule()
-            if int(self.recur_frequency) == 0 or int(self.recur_frequency) == 1:
-                new_date = list(rrule.rrule(
-                    rrule.WEEKLY, count=1,
-                    wkst=current_date.weekday(),
-                    byweekday=rule_tupple,
-                    dtstart=datetime(
-                        self.due_date.year, self.due_date.month,
-                        self.due_date.day+1)))[0]
-                return Date.parse(
-                    str(new_date.year)+str(new_date.month)+str(new_date.day))
-            else:
-                new_date = list(rrule.rrule(
-                    rrule.WEEKLY, interval=int(self.recur_frequency), count=1,
-                    wkst=current_date.weekday(),
-                    byweekday=rule_tupple,
-                    dtstart=datetime(
-                        self.due_date.year, self.due_date.month,
-                        self.due_date.day+1)))[0]
-                return Date.parse(
-                    str(new_date.year)+str(new_date.month)+str(new_date.day))
+            new_date = list(rrule.rrule(
+                rrule.WEEKLY, interval=int(self.recur_frequency), count=1,
+                wkst=current_date.weekday(),
+                byweekday=rule_tupple,
+                dtstart=datetime(
+                    self.due_date.year, self.due_date.month,
+                    self.due_date.day+1)))[0]
+            return Date.parse(
+                str(new_date.year)+str(new_date.month)+str(new_date.day))
         elif self.repeats == self.REP_MONTHLY:
-            if int(self.recur_frequency) == 0 or int(self.recur_frequency) == 1:
-                new_date = self.get_monthly_due_date(1)
-                return Date.parse(
-                    str(new_date.year)+str(new_date.month)+str(new_date.day))
-            else:
-                new_date = self.get_monthly_due_date(int(self.recur_frequency))
-                return Date.parse(
-                    str(new_date.year)+str(new_date.month)+str(new_date.day))
+            new_date = self.get_monthly_due_date(int(self.recur_frequency))
+            return Date.parse(
+                str(new_date.year)+str(new_date.month)+str(new_date.day))
         elif self.repeats == self.REP_YEARLY:
-            if int(self.recur_frequency) == 0:
-                return self.add_months(self.due_date(), 12)
-            else:
-                return self.add_months(
-                    self.get_due_date(), 12 * int(self.recur_frequency))
+            return self.add_months(
+                self.get_due_date(), 12 * int(self.recur_frequency))
 
-    #TODO refactor this method and create copy and create task new method
-    def clone_recurring_task(
-        self, is_subtask=False, parent=None):
+    def clone_recurring_task(self, is_subtask=False, parent=None):
         if is_subtask:
             task = parent.new_subtask()
         else:
@@ -477,7 +460,7 @@ class Task(TreeNode):
         current_date = self.get_current_date()
         while True:
             if self.parent is not None:
-                if self.parent.get_due_date().__ge__(current_date): 
+                if self.parent.get_due_date().__ge__(current_date):
                     break
                 self.parent = self.parent.validate_recurring_task()
                 if self.parent == -1:

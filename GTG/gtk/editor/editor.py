@@ -63,7 +63,7 @@ class TaskEditor(object):
         self.thisisnew = thisisnew
         self.clipboard = clipboard
         self.edit_event = True
-        self.task_clone = None
+        self.clone_task = None
         self.builder = Gtk.Builder()
         self.builder.add_from_file(GnomeConfig.EDITOR_UI_FILE)
         self.donebutton = self.builder.get_object("mark_as_done_editor")
@@ -78,6 +78,15 @@ class TaskEditor(object):
         self.repeattask_button = self.builder.get_object("toggle_repeattask")
         self.repeattask_button.set_tooltip_text(
             GnomeConfig.REPEAT_TASK_TOOLTIP)
+
+        # Get spinbutton and set ranges
+        self.endafter_spinbutton = self.builder.get_object(
+            "endafter_spinbutton")
+        self.every_spinbutton = self.builder.get_object(
+            "every_spinbutton")
+        self.every_spinbutton.set_range(1, 30)
+        self.every_spinbutton.set_wrap(True)
+        # TODO Decide the range MAX range for endafter_spinbutton
 
         # Create our dictionary and connect it
         dic = {
@@ -230,7 +239,7 @@ class TaskEditor(object):
         # all instances option
         if self.task.get_is_recurring() == 'True':
             if not self.thisisnew and \
-            self.task.get_due_date() >= self.task.get_current_date():
+                    self.task.get_due_date() >= self.task.get_current_date():
                 self.builder.get_object("box16").show()
                 self.builder.get_object("all_instances").set_active(True)
                 self.clone_recurring_task()
@@ -238,9 +247,9 @@ class TaskEditor(object):
             self.read_recurrence_info()
 
     def clone_recurring_task(self):
-        self.task_clone = self.req.new_task()
-        self.req.clone_recurring_task(self.task_clone, self.task)
-        self.task_clone.set_status(self.task_clone.STA_HIDDEN)
+        self.clone_task = self.req.new_task()
+        self.req.clone_recurring_task(self.clone_task, self.task)
+        self.clone_task.set_status(self.clone_task.STA_HIDDEN)
 
     def init_recurring_task_attributes(self):
         """
@@ -252,8 +261,8 @@ class TaskEditor(object):
             self.task.repeats = self.builder.get_object(
                 "repeats_combobox").get_active_text()
         if self.task.recur_frequency is None:
-            self.task.recur_frequency = self.builder.get_object(
-                "every_spinbutton").get_value_as_int()
+            self.task.recur_frequency = \
+                self.every_spinbutton.get_value_as_int()
         if self.task.onthe is None:
             self.task.onthe = self.builder.get_object(
                 "sequence_combobox").get_active_text()
@@ -261,13 +270,13 @@ class TaskEditor(object):
             self.task.onday = self.builder.get_object(
                 "days_combobox").get_active_text()
         if self.task.recur_days is None:
-            self.task.recur_days = self.days_update()
+            self.task.recur_days = self.weekdays_summary()
         if self.task.endson is None:
             self.task.endson = self.builder.get_object(
                 "end_combobox").get_active_text().lower()
         if self.task.occurrences == 0:
-            self.task.occurrences = self.builder.get_object(
-                "endafter_spinbutton").get_value_as_int()
+            self.task.occurrences = \
+                self.endafter_spinbutton.get_value_as_int()
 
     # Define accelerator-keys for this dialog
     # TODO: undo/redo
@@ -475,7 +484,7 @@ class TaskEditor(object):
                 parsed_date = Date.parse(widget.get_text())
                 if self.startdate_widget.get_text() != "":
                     if Date.parse(self.startdate_widget.get_text()).__gt__(
-                        parsed_date):
+                            parsed_date):
                         valid = False
                     else:
                         valid = True
@@ -628,10 +637,8 @@ class TaskEditor(object):
         self.textview.grab_focus()
 
     def read_recurrence_info(self):
-        """
-        Read the recurrence info and enabled the widgets with
-        proper item
-        """
+        # Read the recurrence info and enabled the widgets with
+        # proper item
         repeat_dict = {self.task.REP_DAILY: 0,
                        self.task.REP_WEEKLY: 1,
                        self.task.REP_MONTHLY: 2,
@@ -648,8 +655,7 @@ class TaskEditor(object):
 
         self.builder.get_object(
             "repeats_combobox").set_active(repeat_dict[self.task.repeats])
-        self.builder.get_object(
-            "every_spinbutton").set_value(int(self.task.recur_frequency))
+        self.every_spinbutton.set_value(int(self.task.recur_frequency))
 
         if self.task.endson == self.task.REC_DATE:
             self.builder.get_object(
@@ -662,8 +668,7 @@ class TaskEditor(object):
         else:
             self.builder.get_object(
                 "end_combobox").set_active(0)
-            self.builder.get_object(
-                "endafter_spinbutton").set_value(int(self.task.occurrences))
+            self.endafter_spinbutton.set_value(int(self.task.occurrences))
 
         if self.task.repeats == self.task.REP_WEEKLY:
             if self.task.recur_days.__contains__(","):
@@ -695,8 +700,7 @@ class TaskEditor(object):
         summary = None
         repeats = self.builder.get_object(
             "repeats_combobox").get_active_text()
-        frequency = self.builder.get_object(
-            "every_spinbutton").get_value_as_int()
+        frequency = self.every_spinbutton.get_value_as_int()
         end_txt = self.builder.get_object(
             "end_combobox").get_active_text()
 
@@ -705,9 +709,9 @@ class TaskEditor(object):
                 summary = repeats
             elif repeats == self.task.REP_YEARLY:
                 if self.startdate_widget.get_text() == "":
-                    summary = "Annually on "+ self.task.get_current_date()
+                    summary = "Annually on " + self.task.get_current_date()
                 else:
-                    summary = "Annually on "+ self.startdate_widget.get_text()
+                    summary = "Annually on " + self.startdate_widget.get_text()
             else:
                 summary = repeats
         else:
@@ -716,7 +720,7 @@ class TaskEditor(object):
                     "common_label").get_text()
 
         if repeats == self.task.REP_WEEKLY:
-            weekdays = self.days_update()
+            weekdays = self.weekdays_summary()
             summary += " on " + weekdays
         elif repeats == self.task.REP_MONTHLY:
             sequence = self.builder.get_object(
@@ -726,8 +730,7 @@ class TaskEditor(object):
             summary += " on " + sequence + " " + days
 
         if end_txt == "After":
-            occurrences = self.builder.get_object(
-                "endafter_spinbutton").get_value_as_int()
+            occurrences = self.endafter_spinbutton.get_value_as_int()
             if occurrences > 1:
                 summary = summary + ", " + str(occurrences) + " times"
         elif end_txt == "On":
@@ -745,28 +748,41 @@ class TaskEditor(object):
     def current_instance_toggled(self, widget):
         self.edit_event = False
 
-    def days_update(self):
+    def weekdays_summary(self):
+        """
+        Return summary of weekdays which are selected
+        """
+        weekdays = ["Sunday", "Monday", "Tuesday",
+                    "Wednesday", "Thursday", "Friday",
+                    "Saturday"]
         days = []
         days_summary = ""
+
         if self.builder.get_object("checkbutton1").get_active():
-            days += ["Sunday"]
+            days += [weekdays[0]]
         if self.builder.get_object("checkbutton2").get_active():
-            days += ["Monday"]
+            days += [weekdays[1]]
         if self.builder.get_object("checkbutton3").get_active():
-            days += ["Tuesday"]
+            days += [weekdays[2]]
         if self.builder.get_object("checkbutton4").get_active():
-            days += ["Wednesday"]
+            days += [weekdays[3]]
         if self.builder.get_object("checkbutton5").get_active():
-            days += ["Thursday"]
+            days += [weekdays[4]]
         if self.builder.get_object("checkbutton6").get_active():
-            days += ["Friday"]
+            days += [weekdays[5]]
         if self.builder.get_object("checkbutton7").get_active():
-            days += ["Saturday"]
+            days += [weekdays[6]]
+
         length = len(days)
+
         if length == 0:
             #TODO select the current day
             # Toggle the checkbutton according to current day
+            # and if no value is selected then by default current day
+            # toggled
             cur_day = time.strftime('%A')
+            index = weekdays.index(cur_day) + 1
+            self.builder.get_object("checkbutton"+str(index)).set_active(True)
             days_summary = cur_day
         elif length == 1:
             days_summary = days[0]
@@ -777,10 +793,11 @@ class TaskEditor(object):
                 for day in days[:-1]:
                     days_summary += day + ", "
                 days_summary += days[-1]
+
         return days_summary
 
     def weekdays_toggled(self, widget):
-        self.task.recur_days = self.days_update()
+        self.task.recur_days = self.weekdays_summary()
         self.update_summary()
 
     def days_combobox_value_changed(self, widget):
@@ -795,40 +812,43 @@ class TaskEditor(object):
         index = widget.get_active()
         if index == 0:
             self.builder.get_object("box11").show()
-            self.builder.get_object("endafter_spinbutton").show()
+            self.endafter_spinbutton.show()
             self.builder.get_object("endonbox").hide()
             self.builder.get_object("occurrence_label").show()
             self.task.endson = self.builder.get_object(
-            "occurrence_label").get_text()
+                "occurrence_label").get_text()
         elif index == 1:
             self.builder.get_object("box11").show()
-            self.builder.get_object("endafter_spinbutton").hide()
+            self.endafter_spinbutton.hide()
             self.builder.get_object("endonbox").show()
             self.builder.get_object("occurrence_label").hide()
             self.task.endson = self.task.REC_DATE
         elif index == 2:
             self.builder.get_object("box11").hide()
-            self.task.endson = self.task.REC_NEVER 
+            self.task.endson = self.task.REC_NEVER
         self.update_summary()
 
     def every_spinbutton_value_changed(self, widget):
         label = self.builder.get_object("common_label")
-        spinbutton = self.builder.get_object("every_spinbutton")
-        self.task.recur_frequency = spinbutton.get_value_as_int()
-        self.set_label_value(label, spinbutton)
+        self.task.recur_frequency = self.every_spinbutton.get_value_as_int()
+        self.set_label_value(label, self.every_spinbutton)
         self.update_summary()
 
     def endafter_spinbutton_value_changed(self, widget):
         label = self.builder.get_object("occurrence_label")
-        spinbutton = self.builder.get_object("endafter_spinbutton")
-        self.task.occurrences = spinbutton.get_value_as_int()
+        self.task.occurrences = self.endafter_spinbutton.get_value_as_int()
         self.task.left_occurrences = self.task.occurrences - 1
-        self.set_label_value(label, spinbutton)
+        self.set_label_value(label, self.endafter_spinbutton)
         self.task.endson = self.builder.get_object(
             "occurrence_label").get_text()
         self.update_summary()
 
     def set_label_value(self, label, spinbutton):
+        """
+        @param label: lable which needs to be processed
+        @param spinbutton: spinbutton object
+        Makes label plural/singular depend on the spinbutton value
+        """
         label_text = label.get_text()
         if spinbutton.get_value_as_int() > 1:
             if label_text.__contains__("s"):
@@ -841,7 +861,7 @@ class TaskEditor(object):
         index = widget.get_active()
         self.task.repeats = widget.get_active_text()
         label = self.builder.get_object("common_label")
-        spinbutton = self.builder.get_object("every_spinbutton")
+
         if index == 0:
             self.builder.get_object("box8").hide()
             self.builder.get_object("box13").hide()
@@ -858,7 +878,8 @@ class TaskEditor(object):
             self.builder.get_object("box8").hide()
             self.builder.get_object("box13").hide()
             self.builder.get_object("common_label").set_text("year")
-        self.set_label_value(label, spinbutton)
+
+        self.set_label_value(label, self.every_spinbutton)
         self.update_summary()
 
     def repeattask_toggled(self, widget):
@@ -867,7 +888,7 @@ class TaskEditor(object):
                 self.task.rid = str(uuid.uuid4())
             self.task.is_recurring = 'True'
             self.builder.get_object("repeattaskbox").show()
-            self.builder.get_object("end_combobox").set_row_span_column(0)
+            #self.builder.get_object("end_combobox").set_row_span_column(0)
             self.builder.get_object("box6").show()
             self.builder.get_object("box12").show()
             self.update_summary()
@@ -969,47 +990,66 @@ class TaskEditor(object):
                     self.task.sync()
 
     def edit_instances(self):
+        # If task is actually modified set_modify_task to true
+        # if all_occurrences == True then simply delete a clone task
+        # as the future instances gets created according to current task
+        # if current_occurrnece is True then set it to normal task
+        # and make a clone task as recurring task(future instances should
+        # get created depend on the past task before making changes)
         modify_list = self.check_modified()
         if any(modify_list):
             self.task.set_modify_task("True")
             if self.edit_event:
-                self.req.delete_task(self.task_clone.get_id())
+                self.req.delete_task(self.clone_task.get_id())
             else:
                 self.task.reset_to_normal_task()
-                self.task_clone.set_status(self.task_clone.STA_ACTIVE)
+                self.clone_task.set_status(self.clone_task.STA_ACTIVE)
         else:
-            self.req.delete_task(self.task_clone.get_id())
-          
+            self.req.delete_task(self.clone_task.get_id())
+
     def check_modified(self):
+        """
+        Return list which contains actual attribute changed
+        check across the cloned task
+        """
         modify_list = list()
-        if self.task_clone.get_title() != self.task.get_title():
+        if self.clone_task.get_title() != self.task.get_title():
             modify_list.append("get_title")
-        if self.task_clone.get_text() != self.task.get_text():
+        if self.clone_task.get_text() != self.task.get_text():
             modify_list.append("get_text")
-        if self.task_clone.get_start_date() != self.task.get_start_date():
+        if self.clone_task.get_start_date() != self.task.get_start_date():
             modify_list.append("get_start_date")
-        if self.task_clone.get_due_date() != self.task.get_due_date():
+        if self.clone_task.get_due_date() != self.task.get_due_date():
             modify_list.append("get_due_date")
-        if self.task_clone.get_endon_date().__ne__(self.task.get_endon_date()):
+        if self.clone_task.get_endon_date().__ne__(self.task.get_endon_date()):
             modify_list.append("get_endon_date")
-        if self.task_clone.get_recurrence_repeats() != self.task.get_recurrence_repeats():
+        if self.clone_task.get_recurrence_repeats() != \
+                self.task.get_recurrence_repeats():
             modify_list.append("get_recurrence_repeats")
-        if self.task_clone.get_recurrence_frequency() != self.task.get_recurrence_frequency():
+        if self.clone_task.get_recurrence_frequency() != \
+                self.task.get_recurrence_frequency():
             modify_list.append("get_recurrence_frequency")
-        if self.task_clone.get_recurrence_onthe() != self.task.get_recurrence_onthe():
+        if self.clone_task.get_recurrence_onthe() != \
+                self.task.get_recurrence_onthe():
             modify_list.append("get_recurrence_onthe")
-        if self.task_clone.get_recurrence_onday() != self.task.get_recurrence_onday():
+        if self.clone_task.get_recurrence_onday() != \
+                self.task.get_recurrence_onday():
             modify_list.append("get_recurrence_onday")
-        if self.task_clone.get_recurrence_endson() != self.task.get_recurrence_endson():
+        if self.clone_task.get_recurrence_endson() != \
+                self.task.get_recurrence_endson():
             modify_list.append("get_recurrence_endson")
-        if self.task_clone.get_recurrence_days() != self.task.get_recurrence_days():
+        if self.clone_task.get_recurrence_days() != \
+                self.task.get_recurrence_days():
             modify_list.append("get_recurrence_days")
+
         return modify_list
 
     def quit(self, widget, data=None):
+        # Before closing the taskbrowser check if due date is set
+        # or if not then notify user to set it
         if self.task.is_recurring == 'True':
             if not self.thisisnew:
-                if self.task_clone is None:
+                if self.clone_task is None:
                     self.clone_recurring_task()
                 self.edit_instances()
             if self.duedate_widget.get_text() == "":

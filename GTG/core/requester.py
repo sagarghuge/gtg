@@ -180,13 +180,14 @@ class Requester(GObject.GObject):
         new_task.set_recurrence_frequency(old_task.get_recurrence_frequency())
         new_task.set_recurrence_onthe(old_task.get_recurrence_onthe())
         new_task.set_recurrence_onday(old_task.get_recurrence_onday())
-        new_task.set_recurrence_endson(old_task.endson, old_task.get_recurrence_endson())
+        new_task.set_recurrence_endson(
+            old_task.endson, old_task.get_recurrence_endson())
         new_task.set_recurrence_days(old_task.get_recurrence_days())
 
         if old_task.endson == old_task.REC_OCCURRENCE \
-        or old_task.endson == old_task.REC_OCCURRENCES:
+                or old_task.endson == old_task.REC_OCCURRENCES:
             new_task.set_left_occurrences(
-            (int(old_task.get_left_occurrences()) - 1))
+                (int(old_task.get_left_occurrences()) - 1))
 
         return new_task
 
@@ -206,7 +207,7 @@ class Requester(GObject.GObject):
         """
         @return: list of instances which have same rid (closed/active)
         """
-        rtid = self.get_rtids(tid , 'active')
+        rtid = self.get_rtids(tid, 'active')
         rtid_closed = self.get_rtids(tid, status='closed')
         return (rtid + rtid_closed)
 
@@ -219,9 +220,9 @@ class Requester(GObject.GObject):
         tasktree = self.get_main_view()
         temp = tasktree.get_node(tid)
         for task_id in tasks:
-             task = tasktree.get_node(task_id)
-             if task.rid == temp.rid:
-                 rtid.append(task_id)
+            task = tasktree.get_node(task_id)
+            if task.rid == temp.rid:
+                rtid.append(task_id)
         return rtid
 
     ############### Tags ##########################

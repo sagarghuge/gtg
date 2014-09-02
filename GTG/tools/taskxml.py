@@ -149,9 +149,10 @@ def task_to_xml(doc, task):
     cleanxml.addTextNode(doc, t_xml, "title", task.get_title())
     t_xml.setAttribute("rid", task.get_rid())
     t_xml.setAttribute("modified", task.get_modify_task())
-    if task.endson == task.REC_OCCURRENCE \
-    or task.endson == task.REC_OCCURRENCES:
-        t_xml.setAttribute("left_occurrences", task.get_left_occurrences())
+    if task.endson == task.REC_OCCURRENCE or \
+            task.endson == task.REC_OCCURRENCES:
+            t_xml.setAttribute(
+                "left_occurrences", task.get_left_occurrences())
     if recure_val == "True":
         t_xml.setAttribute("recur", task.get_is_recurring())
         whence = task.get_recurrence_repeats()
