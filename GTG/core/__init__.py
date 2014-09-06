@@ -205,6 +205,7 @@ class CoreConfig(Borg):
     NOTAG_TAG = "gtg-tags-none"
     SEP_TAG = "gtg-tags-sep"
     SEARCH_TAG = "search"
+    #ALLRECURTASKS_TAG = "gtg-tags-recur-all"
 
     def check_config_file(self, path):
         """ This function bypasses the errors of config file and allows GTG

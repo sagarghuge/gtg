@@ -71,6 +71,12 @@ class ParametersUI(Gtk.Box):
                 "somebox_text": _("Tasks with these tags:"),
                 "parameter_name": "attached-tags",
             })),
+            #("attached-tags", self.UI_generator(ImportTagsUI, {
+            #    "title": _("Tags to sync"),
+            #    "anybox_text": _("All recurring tasks"),
+            #    "somebox_text": _("Tasks with these tags:"),
+            #    "parameter_name": "attached-tags",
+            #})),
             ("path", self.UI_generator(PathUI)),
             ("username", self.UI_generator(TextUI, {
                 "description": _("Username"),

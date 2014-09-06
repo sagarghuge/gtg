@@ -1674,6 +1674,7 @@ class TaskBrowser(GObject.GObject):
                 if tag.is_search_tag() and tag_id in filters:
                     self.req.remove_tag(tag_id)
                     self.apply_filter_on_panes(CoreConfig.ALLTASKS_TAG)
+                    #self.apply_filter_on_panes(CoreConfig.ALLRECURTASKS_TAG)
                     return
 
         if query:

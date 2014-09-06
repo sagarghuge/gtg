@@ -709,7 +709,8 @@ class TaskEditor(object):
                 summary = repeats
             elif repeats == self.task.REP_YEARLY:
                 if self.startdate_widget.get_text() == "":
-                    summary = "Annually on " + self.task.get_current_date()
+                    summary = "Annually on " + str(
+                        self.task.get_current_date())
                 else:
                     summary = "Annually on " + self.startdate_widget.get_text()
             else:

@@ -83,6 +83,19 @@ class TreeFactory:
         p = {}
         self.tasktree.add_filter(CoreConfig.ALLTASKS_TAG,
                                  self.alltag, parameters=p)
+
+        '''
+        allrecurtag = Tag(CoreConfig.ALLRECURTASKS_TAG, req=req)
+        allrecurtag.set_attribute("special", "allrecur")
+        allrecurtag.set_attribute("label", "<span weight='bold'>%s</span>"
+                             % _("All recurring tasks"))
+        allrecurtag.set_attribute("icon", "gtk-refresh")
+        allrecurtag.set_attribute("order", 1)
+        tagtree.add_node(allrecurtag)
+        p = {}
+        self.tasktree.add_filter(CoreConfig.ALLRECURTASKS_TAG,
+                                 self.allrecurtag, parameters=p)
+        '''
         # Build the "without tag tag"
         notag_tag = Tag(CoreConfig.NOTAG_TAG, req=req)
         notag_tag.set_attribute("special", "notag")
@@ -90,6 +103,7 @@ class TreeFactory:
                                 % _("Tasks with no tags"))
         notag_tag.set_attribute("icon", "gtg-tags-none")
         notag_tag.set_attribute("order", 2)
+        #notag_tag.set_attribute("order", 3)
         tagtree.add_node(notag_tag)
         p = {}
         self.tasktree.add_filter(CoreConfig.NOTAG_TAG,
@@ -102,6 +116,7 @@ class TreeFactory:
                                  "<span weight='bold'>%s</span>" % _("Search"))
         search_tag.set_attribute("icon", "search")
         search_tag.set_attribute("order", 1)
+        #search_tag.set_attribute("order", 2)
         tagtree.add_node(search_tag)
         p = {}
         self.tasktree.add_filter(CoreConfig.SEARCH_TAG,
@@ -111,6 +126,7 @@ class TreeFactory:
         sep_tag = Tag(CoreConfig.SEP_TAG, req=req)
         sep_tag.set_attribute("special", "sep")
         sep_tag.set_attribute("order", 3)
+        #sep_tag.set_attribute("order", 4)
         tagtree.add_node(sep_tag)
 
         #### Filters
@@ -147,6 +163,10 @@ class TreeFactory:
 
     def alltag(self, task, parameters=None):
         return True
+
+    #def allrecurtag(self, task, parameters=None):
+    #    if task.is_recurring == 'True':
+    #        return True
 
     def notag(self, task, parameters=None):
         """ Filter of tasks without tags """

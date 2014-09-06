@@ -149,7 +149,7 @@
                 <property name="can_focus">False</property>
                 <property name="label" translatable="yes">toggletoolbutton1</property>
                 <property name="use_underline">True</property>
-                <property name="icon_name">gtg-recurrence-task</property>
+                <property name="icon_name">view-refresh</property>
                 <signal name="toggled" handler="on_repeattask_toggled" swapped="no"/>
               </object>
               <packing>

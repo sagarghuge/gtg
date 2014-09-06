@@ -35,7 +35,7 @@ class NotifyCloseUI():
         self.builder.connect_signals(signals)
 
     def on_confirm_pressed(self, widget):
-        self.builder.get_object("notify_dialog").hide()
+        self.builder.get_object("notify_dialog").destroy()
 
     def notifyclose(self):
         cdlabel2 = self.builder.get_object("cd-label2")
