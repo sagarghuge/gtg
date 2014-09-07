@@ -149,7 +149,7 @@ class Task(TreeNode):
     def get_recurrence_task(self):
         #TODO This will return the instances of task
         if self.is_recurring is not None and self.is_recurring == 'True':
-            return self
+            return True
 
     def get_recurrence_endson(self):
         if self.endson is not None:
@@ -436,6 +436,9 @@ class Task(TreeNode):
     def reset_to_normal_task(self):
         self.is_recurring = None
         self.sync()
+        task_tree = self.req.get_tasks_tree(name='active', refresh=False)
+        self.req.apply_global_filter(task_tree, 'active')
+        self.req.unapply_global_filter(task_tree, 'active')
 
     def do_prior_status_setting(self, status):
         if status in [self.STA_DONE, self.STA_DISMISSED]:

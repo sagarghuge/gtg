@@ -889,10 +889,12 @@ class TaskEditor(object):
                 self.task.rid = str(uuid.uuid4())
             self.task.is_recurring = 'True'
             self.builder.get_object("repeattaskbox").show()
-            #self.builder.get_object("end_combobox").set_row_span_column(0)
             self.builder.get_object("box6").show()
             self.builder.get_object("box12").show()
             self.update_summary()
+            if self.clone_task is not None:
+                self.req.delete_task(self.clone_task.get_id())
+                self.clone_task = None
         else:
             self.task.is_recurring = 'False'
             self.task.rid = None
@@ -900,6 +902,11 @@ class TaskEditor(object):
             self.builder.get_object("box6").hide()
             self.builder.get_object("box8").hide()
             self.builder.get_object("box12").hide()
+            self.builder.get_object("box16").hide()
+        # apply-unapply filter to reflect the changes
+        task_tree = self.req.get_tasks_tree(name='active', refresh=False)
+        self.req.apply_global_filter(task_tree, 'active')
+        self.req.unapply_global_filter(task_tree, 'active')
 
     def inserttag(self, widget, tag):
         self.textview.insert_tags([tag])
@@ -1002,11 +1009,13 @@ class TaskEditor(object):
             self.task.set_modify_task("True")
             if self.edit_event:
                 self.req.delete_task(self.clone_task.get_id())
+                self.clone_task = None
             else:
                 self.task.reset_to_normal_task()
                 self.clone_task.set_status(self.clone_task.STA_ACTIVE)
         else:
             self.req.delete_task(self.clone_task.get_id())
+            self.clone_task = None
 
     def check_modified(self):
         """

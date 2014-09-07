@@ -77,7 +77,9 @@ class DeletionUI():
         otherwise, we will look which tid is selected"""
         for tid in self.tids_todelete:
             if self.req.has_task(tid):
-                self.req.delete_task(tid, recursive=True)
+                task = self.req.get_task(tid)
+                if task.get_is_recurring() != 'True':
+                    self.req.delete_task(tid, recursive=True)
         self.tids_todelete = []
         self.on_delete_update_tags()
 
